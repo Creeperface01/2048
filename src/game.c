@@ -45,15 +45,24 @@ game_t *game_create() {
     game->tiles = malloc(sizeof(tile_t *) * highestIndex);
     game->indices = malloc(sizeof(int) * highestIndex);
 
-    for (int i = 0; i < highestIndex; i++) {
-        game->tiles[i] = NULL;
-    }
-
     int j = 0;
     for (unsigned int x = 0; x < C; x++) {
         for (unsigned int y = 0; y < R; ++y) {
             game->indices[j++] = (y << game->bit_length) | x;
         }
+    }
+
+    game_reset(game);
+    return game;
+}
+
+void game_reset(game_t *game) {
+    game->score = 0;
+    game->state = STATE_NONE;
+
+    int highestIndex = (int) pow(2, (int) game->bit_length * 2);
+    for (int i = 0; i < highestIndex; i++) {
+        game->tiles[i] = NULL;
     }
 
     vec2i_t vectors[2];
@@ -66,8 +75,6 @@ game_t *game_create() {
     for (int i = 0; i < 2; i++) {
         game_create_tile(game, &vectors[i], 1 << ((rand() % 2) + 1));
     }
-
-    return game;
 }
 
 void game_destroy(game_t *game) {
@@ -176,14 +183,64 @@ int game_shrink_tiles(vec_tile_t *tiles, int length) {
     return changed;
 }
 
+int game_check_blocked(game_t *game) {
+    for (int i = 0; i < TILES_SIZE; ++i) {
+        tile_t *tile = game->tiles[game->indices[i]];
+
+        if (tile == NULL) {
+            return 0;
+        }
+    }
+
+    vec2i_t vec;
+    tile_t *last;
+    tile_t *tile;
+
+    for (int x = 0; x < C; ++x) {
+        last = NULL;
+        for (int y = 0; y < R; ++y) {
+            vec = vec2i_of(x, y);
+            tile = game_get_tile(game, &vec);
+
+            if (last != NULL && last->value == tile->value) {
+                return 0;
+            }
+
+            last = tile;
+        }
+    }
+
+    for (int y = 0; y < R; ++y) {
+        last = NULL;
+        for (int x = 0; x < C; ++x) {
+            vec = vec2i_of(x, y);
+            tile = game_get_tile(game, &vec);
+
+            if (last != NULL && last->value == tile->value) {
+                return 0;
+            }
+
+            last = tile;
+        }
+    }
+
+    return 1;
+}
+
 round_result_t game_handle_move(game_t *game, direction_t direction) {
+    round_result_t result;
+    result.merged_tiles_length = 0;
+    result.state = STATE_NONE;
+
+    if (game->state != STATE_NONE) {
+        result.state = game->state;
+        return result;
+    }
+
     vec2i_t offset = vec_get_direction(direction);
     axis_t axis = vec_axis(&offset);
     int maxColumn = axis == AXIS_X ? R : C; // NOLINT(bugprone-branch-clone)
     int tilesLength = axis == AXIS_X ? C : R; // NOLINT(bugprone-branch-clone)
-
-    round_result_t result;
-    result.merged_tiles_length = 0;
 
     int changed = 0;
 
@@ -192,31 +249,44 @@ round_result_t game_handle_move(game_t *game, direction_t direction) {
 
         get_relative_tiles(game, tiles, tilesLength, direction, i);
 
-        changed = changed || game_shrink_tiles(tiles, tilesLength);
+        changed = game_shrink_tiles(tiles, tilesLength) || changed;
 
         int mergeableIndex = find_mergeable(tiles, tilesLength);
 
         if (mergeableIndex >= 0) {
+            result.state = STATE_MERGE;
             tiles[mergeableIndex].tile = &g_tiles[tiles[mergeableIndex].tile->index + 1];
+            unsigned int tileValue = tiles[mergeableIndex].tile->value;
+            game->score += tileValue;
+            if (tileValue == 2048) {
+                result.state = game->state = STATE_WIN;
+            }
 
             tiles[mergeableIndex - 1].tile = NULL;
             result.merged_tiles[result.merged_tiles_length++] = tiles[mergeableIndex].vec;
+            changed = 1;
         }
 
-        changed = changed || game_shrink_tiles(tiles, tilesLength);
+        changed = game_shrink_tiles(tiles, tilesLength) || changed;
 
         for (int j = 0; j < tilesLength; ++j) {
             game_set_tile(game, &tiles[j].vec, tiles[j].tile);
         }
     }
 
-    if (changed) {
+    if (result.state != STATE_WIN && changed) {
         vec2i_t emptyTile;
         if (find_empty_tile(game, &emptyTile)) {
+            result.new_tile = emptyTile;
             game_create_tile(game, &emptyTile, 1 << ((rand() % 2) + 1));
         }
     }
 
+    if (game_check_blocked(game)) {
+        result.state = game->state = STATE_BLOCKED;
+    }
+
+    printf("state: %d\n", result.state);
     return result;
 }
 

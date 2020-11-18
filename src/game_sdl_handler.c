@@ -2,6 +2,19 @@
 #include "stdlib.h"
 #include "stdio.h"
 
+void resize_texture_by_height(SDL_Rect *rect, SDL_Texture *texture, int max_height) {
+    int originHeight;
+    int originWidth;
+
+    SDL_QueryTexture(texture, NULL, NULL, &originWidth, &originHeight);
+
+    int height = min(max_height, originHeight);
+    int width = (height * originWidth) / originHeight;
+
+    rect->h = height;
+    rect->w = width;
+}
+
 void create_value_texture(sdl_game_field_texture_t *field_texture, sdl_game_t *sdl_game, int value) {
     SDL_Color color;
 
@@ -142,6 +155,47 @@ void game_sdl_render_tiles(sdl_game_t *sdl_game) {
     }
 }
 
+void render_text(sdl_game_t *sdl_game, SDL_Color color, char *text, int x, int y, int max_height) {
+    SDL_Surface *surf = TTF_RenderText_Blended(sdl_game->font, text, color);
+    SDL_Texture *texture = SDL_CreateTextureFromSurface(sdl_game->renderer, surf);
+
+    SDL_Rect rect;
+    rect.x = x;
+    rect.y = y;
+
+    resize_texture_by_height(&rect, texture, max_height);
+
+    SDL_RenderCopy(sdl_game->renderer, texture, NULL, &rect);
+
+    SDL_DestroyTexture(texture);
+    SDL_FreeSurface(surf);
+}
+
+void game_sdl_render(sdl_game_t *sdl_game) {
+    SDL_SetRenderDrawColorRGB(sdl_game->renderer, COLOR_BACKGROUND, 255);
+    SDL_RenderClear(sdl_game->renderer);
+
+    SDL_Rect rect = {0, 0, WINDOW_WIDTH, STATUS_BAR_HEIGHT};
+    SDL_SetRenderDrawColor(sdl_game->renderer, 150, 150, 150, 255);
+    SDL_RenderFillRect(sdl_game->renderer, &rect);
+
+    char score[16];
+    sprintf(score, "score: %d", sdl_game->game->score);
+
+    SDL_Color color = {0, 0, 0};
+
+    render_text(sdl_game, color, score, 20, 40, 50);
+
+    round_state_t state = sdl_game->game->state;
+    if (state == STATE_BLOCKED) {
+        render_text(sdl_game, (SDL_Color) {232, 72, 60}, "Prohra", 300, 40, 50);
+    } else if (state == STATE_WIN) {
+        render_text(sdl_game, (SDL_Color) {60, 232, 69}, "Vyhra", 300, 40, 50);
+    }
+
+    game_sdl_render_tiles(sdl_game);
+}
+
 void game_sdl_start(sdl_game_t *sdl_game) {
     SDL_Event e;
     int quit = 0;
@@ -169,10 +223,7 @@ void game_sdl_start(sdl_game_t *sdl_game) {
         }
 
         if (sdl_game->changed) {
-            SDL_SetRenderDrawColorRGB(sdl_game->renderer, COLOR_BACKGROUND, 255);
-            SDL_RenderClear(sdl_game->renderer);
-
-            game_sdl_render_tiles(sdl_game);
+            game_sdl_render(sdl_game);
 
 //            game_sdl_render_tile_value(sdl_game, 20, 20, 1024);
 
