@@ -286,7 +286,6 @@ round_result_t game_handle_move(game_t *game, direction_t direction) {
         result.state = game->state = STATE_BLOCKED;
     }
 
-    printf("state: %d\n", result.state);
     return result;
 }
 
