@@ -2,9 +2,45 @@
 #include "stdlib.h"
 #include "stdio.h"
 
+void create_value_texture(sdl_game_field_texture_t *field_texture, sdl_game_t *sdl_game, int value) {
+    SDL_Color color;
+
+    if (value > 4) {
+        color = color_from_rgb(COLOR_NUMBER_LIGHT);
+    } else {
+        color = color_from_rgb(COLOR_NUMBER_DARK);
+    }
+
+    char text[10];
+    itoa(value, text, 10);
+
+    SDL_Surface *surf = TTF_RenderText_Blended(sdl_game->font, text, color);
+    SDL_Texture *texture = SDL_CreateTextureFromSurface(sdl_game->renderer, surf);
+
+    int maxHeight = TILE_SIZE * 0.8;
+    int maxWidth = TILE_SIZE - (TILE_SIZE * 0.2);
+
+    int originHeight;
+    int originWidth;
+
+    SDL_QueryTexture(texture, NULL, NULL, &originWidth, &originHeight);
+
+    int height = min(maxHeight, (originHeight * maxWidth) / originWidth);
+    int width = (height * originWidth) / originHeight;
+
+    field_texture->texture = texture;
+    field_texture->surface = surf;
+
+    field_texture->rect.x = ((TILE_SIZE - width) / 2);
+    field_texture->rect.y = ((TILE_SIZE - height) / 2);
+    field_texture->rect.w = width;
+    field_texture->rect.h = height;
+}
+
 sdl_game_t *game_sdl_init(game_t *game) {
     SDL_SetMainReady();
     SDL_Init(SDL_INIT_VIDEO);
+    TTF_Init();
 
     sdl_game_t *sdl_game = malloc(sizeof(sdl_game_t));
 
@@ -19,16 +55,26 @@ sdl_game_t *game_sdl_init(game_t *game) {
     sdl_game->game = game;
     sdl_game->renderer = SDL_CreateRenderer(sdl_game->window, -1, SDL_RENDERER_ACCELERATED | SDL_RENDERER_PRESENTVSYNC);
 
+    sdl_game->font = TTF_OpenFont("../assets/OpenSans-Bold.ttf", 500);
+//    sdl_game->font = TTF_OpenFont("../assets/arial.ttf", 24);
+
+    sdl_game->textures = malloc(sizeof(sdl_game_field_texture_t) * COLORS_COUNT);
+    for (unsigned int i = 0; i < COLORS_COUNT; i++) {
+        create_value_texture(&sdl_game->textures[i], sdl_game, (int) (1u << (i + 1u)));
+    }
+
     return sdl_game;
 }
 
 void game_sdl_destroy(sdl_game_t *sdl_game) {
+    TTF_CloseFont(sdl_game->font);
     SDL_DestroyWindow(sdl_game->window);
     SDL_DestroyRenderer(sdl_game->renderer);
     SDL_Quit();
 
     sdl_game->window = NULL;
     sdl_game->renderer = NULL;
+    sdl_game->font = NULL;
     free(sdl_game);
 }
 
@@ -58,6 +104,15 @@ void rect_of(SDL_Rect *rect, int x, int y) {
     rect->h = TILE_SIZE;
 }
 
+void game_sdl_render_tile_value(sdl_game_t *sdl_game, int x, int y, int index) {
+    sdl_game_field_texture_t *field_texture = &sdl_game->textures[index];
+    SDL_Rect rect = field_texture->rect;
+    rect.x += x;
+    rect.y += y;
+
+    SDL_RenderCopy(sdl_game->renderer, field_texture->texture, NULL, &rect);
+}
+
 void game_sdl_render_tiles(sdl_game_t *sdl_game) {
     for (int x = 0; x < C; ++x) {
         for (int y = 0; y < R; ++y) {
@@ -79,6 +134,10 @@ void game_sdl_render_tiles(sdl_game_t *sdl_game) {
 
             SDL_SetRenderDrawColorRGB(sdl_game->renderer, color, 255);
             SDL_RenderFillRect(sdl_game->renderer, &rect);
+
+            if (tile != NULL) {
+                game_sdl_render_tile_value(sdl_game, rect.x, rect.y, (int) tile->index);
+            }
         }
     }
 }
@@ -114,6 +173,8 @@ void game_sdl_start(sdl_game_t *sdl_game) {
             SDL_RenderClear(sdl_game->renderer);
 
             game_sdl_render_tiles(sdl_game);
+
+//            game_sdl_render_tile_value(sdl_game, 20, 20, 1024);
 
 //            SDL_Rect rect = {10, 10, 200, 200};
 //

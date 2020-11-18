@@ -158,8 +158,8 @@ int find_empty_tile(game_t *game, vec2i_t *v) {
 }
 
 int game_shrink_tiles(vec_tile_t *tiles, int length) {
-    int filled = 0;
     int current_offset = 0;
+    int changed = 0;
     for (int j = length - 1; j >= 0; j--) {
         if (tiles[j].tile == NULL) {
             current_offset++;
@@ -169,11 +169,11 @@ int game_shrink_tiles(vec_tile_t *tiles, int length) {
         if (current_offset != 0) {
             tiles[j + current_offset].tile = tiles[j].tile;
             tiles[j].tile = NULL;
+            changed = 1;
         }
-        filled++;
     }
 
-    return filled;
+    return changed;
 }
 
 round_result_t game_handle_move(game_t *game, direction_t direction) {
@@ -185,12 +185,14 @@ round_result_t game_handle_move(game_t *game, direction_t direction) {
     round_result_t result;
     result.merged_tiles_length = 0;
 
+    int changed = 0;
+
     for (int i = 0; i < maxColumn; ++i) {
         vec_tile_t tiles[tilesLength];
 
         get_relative_tiles(game, tiles, tilesLength, direction, i);
 
-        game_shrink_tiles(tiles, tilesLength);
+        changed = changed || game_shrink_tiles(tiles, tilesLength);
 
         int mergeableIndex = find_mergeable(tiles, tilesLength);
 
@@ -201,16 +203,18 @@ round_result_t game_handle_move(game_t *game, direction_t direction) {
             result.merged_tiles[result.merged_tiles_length++] = tiles[mergeableIndex].vec;
         }
 
-        game_shrink_tiles(tiles, tilesLength);
+        changed = changed || game_shrink_tiles(tiles, tilesLength);
 
         for (int j = 0; j < tilesLength; ++j) {
             game_set_tile(game, &tiles[j].vec, tiles[j].tile);
         }
     }
 
-    vec2i_t emptyTile;
-    if (find_empty_tile(game, &emptyTile)) {
-        game_create_tile(game, &emptyTile, 1 << ((rand() % 2) + 1));
+    if (changed) {
+        vec2i_t emptyTile;
+        if (find_empty_tile(game, &emptyTile)) {
+            game_create_tile(game, &emptyTile, 1 << ((rand() % 2) + 1));
+        }
     }
 
     return result;
@@ -226,17 +230,12 @@ void get_relative_tiles(game_t *game, vec_tile_t *tiles, int length, direction_t
 
     vec2i_t base = {baseX, baseY};
 
-//    int length = axis == AXIS_X ? C : R; // NOLINT(bugprone-branch-clone)
-//    vec_tile_t *tiles = malloc(sizeof(vec_tile_t) * length);
-
     for (int i = 0; i < length; i++) {
         tile_t *t = game_get_tile(game, &base);
         tiles[i] = (vec_tile_t) {base, t};
 
         base = vec2i_add(&base, &offset);
     }
-
-//    return tiles;
 }
 
 int game_check_position(vec2i_t *pos) {

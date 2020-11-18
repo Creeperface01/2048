@@ -3,12 +3,12 @@ project(projekt1 C)
 
 set(CMAKE_C_STANDARD 11)
 
-#set (CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -fno-omit-frame-pointer -fsanitize=address")
-#set (CMAKE_LINKER_FLAGS_DEBUG "${CMAKE_LINKER_FLAGS_DEBUG} -fno-omit-frame-pointer -fsanitize=address")
+set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -fno-omit-frame-pointer -fsanitize=address")
+set(CMAKE_LINKER_FLAGS_DEBUG "${CMAKE_LINKER_FLAGS_DEBUG} -fno-omit-frame-pointer -fsanitize=address")
 
-#set(CMAKE_EXE_LINKER_FLAGS_INIT "-fsanitize=address -fno-omit-frame-pointer")
+set(CMAKE_EXE_LINKER_FLAGS_INIT "-fsanitize=address -fno-omit-frame-pointer")
 
-if(WIN32)
+if (WIN32)
     set(SDL2MAIN_LIBRARY "${CMAKE_SOURCE_DIR}/libs/SDL2/i686-w64-mingw32/lib/libSDL2main.a")
 
     set(SDL2_INCLUDE_DIR "${CMAKE_SOURCE_DIR}/libs/SDL2/i686-w64-mingw32/include/SDL2")
@@ -19,6 +19,9 @@ if(WIN32)
 
     file(COPY
             "${CMAKE_SOURCE_DIR}/libs/SDL2/i686-w64-mingw32/bin/SDL2.dll"
+            "${CMAKE_SOURCE_DIR}/libs/SDL2_ttf/i686-w64-mingw32/bin/SDL2_ttf.dll"
+            "${CMAKE_SOURCE_DIR}/libs/SDL2_ttf/i686-w64-mingw32/bin/libfreetype-6.dll"
+            "${CMAKE_SOURCE_DIR}/libs/SDL2_ttf/i686-w64-mingw32/bin/zlib1.dll"
             DESTINATION ${CMAKE_BINARY_DIR})
 else()
     set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake")
@@ -37,4 +40,5 @@ file(GLOB SOURCES "src/*.c" "src/*.h")
 add_executable(${PROJECT_NAME} ${SOURCES})
 target_link_libraries(${PROJECT_NAME}
         ${SDL2MAIN_LIBRARY}
-        ${SDL2_LIBRARY})
+        ${SDL2_LIBRARY}
+        ${SDL2_TTF_LIBRARY})
