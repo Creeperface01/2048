@@ -7,7 +7,7 @@
 #define TILES_SIZE (R * C)
 #define MAX_LINE_LENGTH (R > C ? R : C)
 
-#define SPACING 20u
+#define SPACING 15u
 #define TILE_SIZE 100
 
 #define STATUS_BAR_HEIGHT 100

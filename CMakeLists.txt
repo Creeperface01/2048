@@ -32,12 +32,13 @@ else()
     find_package(SDL2 REQUIRED)
     find_package(SDL2_ttf REQUIRED)
     find_package(Sanitizers REQUIRED)
-endif()
+endif ()
 
 include_directories(${SDL2_INCLUDE_DIR} ${SDL2_TTF_INCLUDE_DIR})
 
 file(GLOB SOURCES "src/*.c" "src/*.h")
-add_executable(${PROJECT_NAME} ${SOURCES})
+file(GLOB GFX_SOURCES "src/gfx/*.c" "src/gfx/*.h")
+add_executable(${PROJECT_NAME} ${SOURCES} ${GFX_SOURCES})
 target_link_libraries(${PROJECT_NAME}
         ${SDL2MAIN_LIBRARY}
         ${SDL2_LIBRARY}

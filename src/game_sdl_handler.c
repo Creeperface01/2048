@@ -1,6 +1,7 @@
 #include "game_sdl_handler.h"
 #include "stdlib.h"
 #include "stdio.h"
+#include "gfx/SDL2_gfxPrimitives.h"
 
 void resize_texture_by_height(SDL_Rect *rect, SDL_Texture *texture, int max_height) {
     int originHeight;
@@ -68,7 +69,7 @@ sdl_game_t *game_sdl_init(game_t *game) {
     sdl_game->game = game;
     sdl_game->renderer = SDL_CreateRenderer(sdl_game->window, -1, SDL_RENDERER_ACCELERATED | SDL_RENDERER_PRESENTVSYNC);
 
-    sdl_game->font = TTF_OpenFont("../assets/OpenSans-Bold.ttf", 500);
+    sdl_game->font = TTF_OpenFont("assets/OpenSans-Bold.ttf", 500);
 //    sdl_game->font = TTF_OpenFont("../assets/arial.ttf", 24);
 
     sdl_game->textures = malloc(sizeof(sdl_game_field_texture_t) * COLORS_COUNT);
@@ -145,8 +146,15 @@ void game_sdl_render_tiles(sdl_game_t *sdl_game) {
             SDL_Rect rect;
             rect_of(&rect, minX, minY);
 
+            SDL_SetRenderDrawColorRGB(sdl_game->renderer, COLOR_1024, 255);
+            SDL_RenderFillRectRounded(sdl_game->renderer, &rect, 10);
+
             SDL_SetRenderDrawColorRGB(sdl_game->renderer, color, 255);
-            SDL_RenderFillRect(sdl_game->renderer, &rect);
+//            SDL_RenderFillRect(sdl_game->renderer, &rect);
+
+            Uint8 *color_bytes = (Uint8 *) &color;
+            roundedBoxRGBA(sdl_game->renderer, rect.x, rect.y, rect.x + rect.w, rect.y + rect.h, 5, color_bytes[2],
+                           color_bytes[1], color_bytes[0], 0xff);
 
             if (tile != NULL) {
                 game_sdl_render_tile_value(sdl_game, rect.x, rect.y, (int) tile->index);
