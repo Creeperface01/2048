@@ -8,22 +8,20 @@
 #include "math.h"
 #include "time.h"
 
-tile_t *g_tiles = NULL;
+void init_tiles(game_t *game) {
+    game->tile_types = malloc(sizeof(tile_t) * COLORS_COUNT);
 
-void init_tiles() {
-    g_tiles = malloc(sizeof(tile_t) * COLORS_COUNT);
-
-    g_tiles[0] = (tile_t) {0, 2, COLOR_2};
-    g_tiles[1] = (tile_t) {1, 4, COLOR_4};
-    g_tiles[2] = (tile_t) {2, 8, COLOR_8};
-    g_tiles[3] = (tile_t) {3, 16, COLOR_16};
-    g_tiles[4] = (tile_t) {4, 32, COLOR_32};
-    g_tiles[5] = (tile_t) {5, 64, COLOR_64};
-    g_tiles[6] = (tile_t) {6, 128, COLOR_128};
-    g_tiles[7] = (tile_t) {7, 256, COLOR_256};
-    g_tiles[8] = (tile_t) {8, 512, COLOR_512};
-    g_tiles[9] = (tile_t) {9, 1024, COLOR_1024};
-    g_tiles[10] = (tile_t) {10, 2048, COLOR_2048};
+    game->tile_types[0] = (tile_t) {0, 2, COLOR_2};
+    game->tile_types[1] = (tile_t) {1, 4, COLOR_4};
+    game->tile_types[2] = (tile_t) {2, 8, COLOR_8};
+    game->tile_types[3] = (tile_t) {3, 16, COLOR_16};
+    game->tile_types[4] = (tile_t) {4, 32, COLOR_32};
+    game->tile_types[5] = (tile_t) {5, 64, COLOR_64};
+    game->tile_types[6] = (tile_t) {6, 128, COLOR_128};
+    game->tile_types[7] = (tile_t) {7, 256, COLOR_256};
+    game->tile_types[8] = (tile_t) {8, 512, COLOR_512};
+    game->tile_types[9] = (tile_t) {9, 1024, COLOR_1024};
+    game->tile_types[10] = (tile_t) {10, 2048, COLOR_2048};
 }
 
 int game_tile_index(game_t *game, vec2i_t *vec) {
@@ -31,12 +29,10 @@ int game_tile_index(game_t *game, vec2i_t *vec) {
 }
 
 game_t *game_create() {
-    if (g_tiles == NULL) {
-        srand(time(NULL));
-        init_tiles();
-    }
-
     game_t *game = malloc(sizeof(game_t));
+
+    srand(time(NULL));
+    init_tiles(game);
 
     game->score = 0;
     game->bit_length = max(find_msb(R), find_msb(C));
@@ -117,7 +113,7 @@ tile_t *game_create_tile(game_t *game, vec2i_t *position, unsigned int value) {
         return NULL;
     }
 
-    tile_t *tile = &g_tiles[i - 1];
+    tile_t *tile = &game->tile_types[i - 1];
 
     game->tiles[game_tile_index(game, position)] = tile;
 
@@ -255,7 +251,7 @@ round_result_t game_handle_move(game_t *game, direction_t direction) {
 
         if (mergeableIndex >= 0) {
             result.state = STATE_MERGE;
-            tiles[mergeableIndex].tile = &g_tiles[tiles[mergeableIndex].tile->index + 1];
+            tiles[mergeableIndex].tile = &game->tile_types[tiles[mergeableIndex].tile->index + 1];
             unsigned int tileValue = tiles[mergeableIndex].tile->value;
             game->score += tileValue;
             if (tileValue == 2048) {

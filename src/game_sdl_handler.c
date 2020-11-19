@@ -16,39 +16,61 @@ void resize_texture_by_height(SDL_Rect *rect, SDL_Texture *texture, int max_heig
     rect->w = width;
 }
 
-void create_value_texture(sdl_game_field_texture_t *field_texture, sdl_game_t *sdl_game, int value) {
-    SDL_Color color;
+SDL_Texture *create_tile_texture(sdl_game_t *sdl_game, tile_t *tile) {
+    SDL_Texture *texture = SDL_CreateTexture(sdl_game->renderer, SDL_GetWindowPixelFormat(sdl_game->window),
+                                             SDL_TEXTUREACCESS_TARGET,
+                                             TILE_SIZE, TILE_SIZE);
+    SDL_SetRenderTarget(sdl_game->renderer, texture);
 
-    if (value > 4) {
-        color = color_from_rgb(COLOR_NUMBER_LIGHT);
+    SDL_SetRenderDrawColorRGB(sdl_game->renderer, COLOR_BACKGROUND, 255);
+    SDL_RenderClear(sdl_game->renderer);
+
+    Uint8 *color_bytes;
+
+    if (tile != NULL) {
+        color_bytes = (Uint8 *) &tile->color;
     } else {
-        color = color_from_rgb(COLOR_NUMBER_DARK);
+        int tmp = COLOR_EMPTY;
+        color_bytes = (Uint8 *) &tmp;
     }
 
-    char text[10];
-    itoa(value, text, 10);
+    roundedBoxRGBA(sdl_game->renderer, 0, 0, TILE_SIZE - 1, TILE_SIZE - 1, 5, color_bytes[2],
+                   color_bytes[1], color_bytes[0], 0xff);
 
-    SDL_Surface *surf = TTF_RenderText_Blended(sdl_game->font, text, color);
-    SDL_Texture *texture = SDL_CreateTextureFromSurface(sdl_game->renderer, surf);
+    if (tile != NULL) { //render value
+        SDL_Color color;
 
-    int maxHeight = TILE_SIZE * 0.8;
-    int maxWidth = TILE_SIZE - (TILE_SIZE * 0.2);
+        if (tile->value > 4) {
+            color = color_from_rgb(COLOR_NUMBER_LIGHT);
+        } else {
+            color = color_from_rgb(COLOR_NUMBER_DARK);
+        }
 
-    int originHeight;
-    int originWidth;
+        char text[10];
+        itoa((int) tile->value, text, 10);
 
-    SDL_QueryTexture(texture, NULL, NULL, &originWidth, &originHeight);
+        SDL_Surface *surf = TTF_RenderText_Blended(sdl_game->font, text, color);
+        SDL_Texture *text_texture = SDL_CreateTextureFromSurface(sdl_game->renderer, surf);
 
-    int height = min(maxHeight, (originHeight * maxWidth) / originWidth);
-    int width = (height * originWidth) / originHeight;
+        int maxHeight = TILE_SIZE * 0.8;
+        int maxWidth = TILE_SIZE - (TILE_SIZE * 0.2);
 
-    field_texture->texture = texture;
-    field_texture->surface = surf;
+        int originHeight;
+        int originWidth;
 
-    field_texture->rect.x = ((TILE_SIZE - width) / 2);
-    field_texture->rect.y = ((TILE_SIZE - height) / 2);
-    field_texture->rect.w = width;
-    field_texture->rect.h = height;
+        SDL_QueryTexture(text_texture, NULL, NULL, &originWidth, &originHeight);
+
+        int height = min(maxHeight, (originHeight * maxWidth) / originWidth);
+        int width = (height * originWidth) / originHeight;
+
+        SDL_Rect rect = {((TILE_SIZE - width) / 2), ((TILE_SIZE - height) / 2), width, height};
+        SDL_RenderCopy(sdl_game->renderer, text_texture, NULL, &rect);
+
+        SDL_DestroyTexture(text_texture);
+        SDL_FreeSurface(surf);
+    }
+
+    return texture;
 }
 
 sdl_game_t *game_sdl_init(game_t *game) {
@@ -67,16 +89,20 @@ sdl_game_t *game_sdl_init(game_t *game) {
     );
 
     sdl_game->game = game;
-    sdl_game->renderer = SDL_CreateRenderer(sdl_game->window, -1, SDL_RENDERER_ACCELERATED | SDL_RENDERER_PRESENTVSYNC);
+    sdl_game->renderer = SDL_CreateRenderer(sdl_game->window, -1, SDL_RENDERER_ACCELERATED | SDL_RENDERER_PRESENTVSYNC |
+                                                                  SDL_RENDERER_TARGETTEXTURE);
 
     sdl_game->font = TTF_OpenFont("assets/OpenSans-Bold.ttf", 500);
-//    sdl_game->font = TTF_OpenFont("../assets/arial.ttf", 24);
 
-    sdl_game->textures = malloc(sizeof(sdl_game_field_texture_t) * COLORS_COUNT);
+    sdl_game->textures = malloc(sizeof(SDL_Texture *) * (COLORS_COUNT + 1));
+
     for (unsigned int i = 0; i < COLORS_COUNT; i++) {
-        create_value_texture(&sdl_game->textures[i], sdl_game, (int) (1u << (i + 1u)));
+        sdl_game->textures[i] = create_tile_texture(sdl_game, &sdl_game->game->tile_types[i]);
     }
 
+    sdl_game->textures[COLORS_COUNT] = create_tile_texture(sdl_game, NULL);
+
+    SDL_SetRenderTarget(sdl_game->renderer, NULL);
     return sdl_game;
 }
 
@@ -110,21 +136,15 @@ direction_t key2dir(SDL_KeyCode code) {
     }
 }
 
-void rect_of(SDL_Rect *rect, int x, int y) {
-    rect->x = x;
-    rect->y = ((int) WINDOW_HEIGHT - y) - TILE_SIZE;
+void game_sdl_render_tile(sdl_game_t *sdl_game, int x, int y, int index) {
+    SDL_Texture *texture = sdl_game->textures[index];
+    SDL_Rect rect;
+    rect.x = x;
+    rect.y = ((int) WINDOW_HEIGHT - y) - TILE_SIZE;
+    rect.w = TILE_SIZE;
+    rect.h = TILE_SIZE;
 
-    rect->w = TILE_SIZE;
-    rect->h = TILE_SIZE;
-}
-
-void game_sdl_render_tile_value(sdl_game_t *sdl_game, int x, int y, int index) {
-    sdl_game_field_texture_t *field_texture = &sdl_game->textures[index];
-    SDL_Rect rect = field_texture->rect;
-    rect.x += x;
-    rect.y += y;
-
-    SDL_RenderCopy(sdl_game->renderer, field_texture->texture, NULL, &rect);
+    SDL_RenderCopy(sdl_game->renderer, texture, NULL, &rect);
 }
 
 void game_sdl_render_tiles(sdl_game_t *sdl_game) {
@@ -133,32 +153,10 @@ void game_sdl_render_tiles(sdl_game_t *sdl_game) {
             vec2i_t vec = vec2i_of(x, y);
             tile_t *tile = game_get_tile(sdl_game->game, &vec);
 
-            Uint32 color;
-            if (tile == NULL) {
-                color = COLOR_EMPTY;
-            } else {
-                color = tile->color;
-            }
-
             int minX = SPACING + (x * TILE_SIZE) + (x * SPACING);
             int minY = SPACING + (y * TILE_SIZE) + (y * SPACING);
 
-            SDL_Rect rect;
-            rect_of(&rect, minX, minY);
-
-            SDL_SetRenderDrawColorRGB(sdl_game->renderer, COLOR_1024, 255);
-            SDL_RenderFillRectRounded(sdl_game->renderer, &rect, 10);
-
-            SDL_SetRenderDrawColorRGB(sdl_game->renderer, color, 255);
-//            SDL_RenderFillRect(sdl_game->renderer, &rect);
-
-            Uint8 *color_bytes = (Uint8 *) &color;
-            roundedBoxRGBA(sdl_game->renderer, rect.x, rect.y, rect.x + rect.w, rect.y + rect.h, 5, color_bytes[2],
-                           color_bytes[1], color_bytes[0], 0xff);
-
-            if (tile != NULL) {
-                game_sdl_render_tile_value(sdl_game, rect.x, rect.y, (int) tile->index);
-            }
+            game_sdl_render_tile(sdl_game, minX, minY, tile != NULL ? (int) tile->index : COLORS_COUNT);
         }
     }
 }

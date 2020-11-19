@@ -9,19 +9,19 @@ set(CMAKE_LINKER_FLAGS_DEBUG "${CMAKE_LINKER_FLAGS_DEBUG} -fno-omit-frame-pointe
 set(CMAKE_EXE_LINKER_FLAGS_INIT "-fsanitize=address -fno-omit-frame-pointer")
 
 if (WIN32)
-    set(SDL2MAIN_LIBRARY "${CMAKE_SOURCE_DIR}/libs/SDL2/i686-w64-mingw32/lib/libSDL2main.a")
+    set(SDL2MAIN_LIBRARY "${CMAKE_SOURCE_DIR}/libs/SDL2/x86_64-w64-mingw32/lib/libSDL2main.a")
 
-    set(SDL2_INCLUDE_DIR "${CMAKE_SOURCE_DIR}/libs/SDL2/i686-w64-mingw32/include/SDL2")
-    set(SDL2_LIBRARY "${CMAKE_SOURCE_DIR}/libs/SDL2/i686-w64-mingw32/lib/libSDL2.dll.a")
+    set(SDL2_INCLUDE_DIR "${CMAKE_SOURCE_DIR}/libs/SDL2/x86_64-w64-mingw32/include/SDL2")
+    set(SDL2_LIBRARY "${CMAKE_SOURCE_DIR}/libs/SDL2/x86_64-w64-mingw32/lib/libSDL2.dll.a")
 
-    set(SDL2_TTF_INCLUDE_DIR "${CMAKE_SOURCE_DIR}/libs/SDL2_ttf/i686-w64-mingw32/include/SDL2")
-    set(SDL2_TTF_LIBRARY "${CMAKE_SOURCE_DIR}/libs/SDL2_ttf/i686-w64-mingw32/lib/libSDL2_ttf.dll.a")
+    set(SDL2_TTF_INCLUDE_DIR "${CMAKE_SOURCE_DIR}/libs/SDL2_ttf/x86_64-w64-mingw32/include/SDL2")
+    set(SDL2_TTF_LIBRARY "${CMAKE_SOURCE_DIR}/libs/SDL2_ttf/x86_64-w64-mingw32/lib/libSDL2_ttf.dll.a")
 
     file(COPY
-            "${CMAKE_SOURCE_DIR}/libs/SDL2/i686-w64-mingw32/bin/SDL2.dll"
-            "${CMAKE_SOURCE_DIR}/libs/SDL2_ttf/i686-w64-mingw32/bin/SDL2_ttf.dll"
-            "${CMAKE_SOURCE_DIR}/libs/SDL2_ttf/i686-w64-mingw32/bin/libfreetype-6.dll"
-            "${CMAKE_SOURCE_DIR}/libs/SDL2_ttf/i686-w64-mingw32/bin/zlib1.dll"
+            "${CMAKE_SOURCE_DIR}/libs/SDL2/x86_64-w64-mingw32/bin/SDL2.dll"
+            "${CMAKE_SOURCE_DIR}/libs/SDL2_ttf/x86_64-w64-mingw32/bin/SDL2_ttf.dll"
+            "${CMAKE_SOURCE_DIR}/libs/SDL2_ttf/x86_64-w64-mingw32/bin/libfreetype-6.dll"
+            "${CMAKE_SOURCE_DIR}/libs/SDL2_ttf/x86_64-w64-mingw32/bin/zlib1.dll"
             DESTINATION ${CMAKE_BINARY_DIR})
 else()
     set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake")

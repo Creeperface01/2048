@@ -6,16 +6,10 @@
 #include "SDL_ttf.h"
 
 typedef struct {
-    SDL_Surface *surface;
-    SDL_Texture *texture;
-    SDL_Rect rect;
-} sdl_game_field_texture_t;
-
-typedef struct {
     SDL_Window *window;
     SDL_Renderer *renderer;
     TTF_Font *font;
-    sdl_game_field_texture_t *textures;
+    SDL_Texture **textures;
     int changed;
     game_t *game;
 } sdl_game_t;

@@ -14,6 +14,7 @@ typedef enum {
 
 typedef struct {
     unsigned int score;
+    tile_t *tile_types;
     tile_t **tiles;
     unsigned int *indices;
     unsigned int bit_length;
