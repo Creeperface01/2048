@@ -23,6 +23,8 @@ vec2i_t vec_get_direction(direction_t direction);
 
 int vec_equals(vec2i_t *vec1, vec2i_t *vec2);
 
+void vec_cpy(vec2i_t *src, vec2i_t *dest);
+
 axis_t vec_axis(vec2i_t *vec);
 
 int vec_axis_direction(vec2i_t *vec);

@@ -21,9 +21,18 @@ typedef struct {
     round_state_t state;
 } game_t;
 
+typedef struct moved_tile_t {
+    vec2i_t from;
+    vec2i_t pos;
+    tile_t *tile;
+    struct moved_tile_t *combined;
+} moved_tile_t;
+
 typedef struct {
     vec2i_t merged_tiles[MAX_LINE_LENGTH]; // NOLINT(bugprone-branch-clone)
     int merged_tiles_length;
+    int axis_line_length;
+    moved_tile_t tile_diffs[R * C]; // NOLINT(bugprone-branch-clone)
     vec2i_t new_tile;
     round_state_t state;
 } round_result_t;
@@ -34,9 +43,9 @@ void game_reset(game_t *game);
 
 void game_destroy(game_t *game);
 
-round_result_t game_handle_move(game_t *game, direction_t direction);
+void game_handle_move(game_t *game, round_result_t *result, direction_t direction);
 
-void get_relative_tiles(game_t *game, vec_tile_t *tiles, int length, direction_t direction, int column);
+void get_relative_tiles(game_t *game, moved_tile_t *tiles, int length, direction_t direction, int column);
 
 tile_t *game_create_tile(game_t *game, vec2i_t *position, unsigned int value);
 

@@ -14,10 +14,7 @@ int leakTest() {
 int main(int arc, char *argv[]) {
 //    int i = leakTest();
 //    printf("%d\n", i);
-    system("echo %cd%");
     game_t *game = game_create();
-
-//    tile_t *tile = game->tiles[0];
 
     sdl_game_t *sdl_game = game_sdl_init(game);
     game_sdl_start(sdl_game);

@@ -29,6 +29,11 @@ vec2i_t vec2i_add(vec2i_t *vec1, vec2i_t *vec2) {
     return (vec2i_t) {vec1->x + vec2->x, vec1->y + vec2->y};
 }
 
+void vec_cpy(vec2i_t *src, vec2i_t *dest) {
+    dest->x = src->x;
+    dest->y = src->y;
+}
+
 int vec_equals(vec2i_t *vec1, vec2i_t *vec2) {
     return vec1->x == vec2->x && vec1->y == vec2->y;
 }

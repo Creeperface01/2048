@@ -17,9 +17,11 @@ void resize_texture_by_height(SDL_Rect *rect, SDL_Texture *texture, int max_heig
 }
 
 SDL_Texture *create_tile_texture(sdl_game_t *sdl_game, tile_t *tile) {
+    float texture_size = TILE_SIZE * MERGE_ANIMATION_SCALE;
+
     SDL_Texture *texture = SDL_CreateTexture(sdl_game->renderer, SDL_GetWindowPixelFormat(sdl_game->window),
                                              SDL_TEXTUREACCESS_TARGET,
-                                             TILE_SIZE, TILE_SIZE);
+                                             (int) texture_size, (int) texture_size);
     SDL_SetRenderTarget(sdl_game->renderer, texture);
 
     SDL_SetRenderDrawColorRGB(sdl_game->renderer, COLOR_BACKGROUND, 255);
@@ -34,7 +36,7 @@ SDL_Texture *create_tile_texture(sdl_game_t *sdl_game, tile_t *tile) {
         color_bytes = (Uint8 *) &tmp;
     }
 
-    roundedBoxRGBA(sdl_game->renderer, 0, 0, TILE_SIZE - 1, TILE_SIZE - 1, 5, color_bytes[2],
+    roundedBoxRGBA(sdl_game->renderer, 0, 0, texture_size - 1, texture_size - 1, 5, color_bytes[2],
                    color_bytes[1], color_bytes[0], 0xff);
 
     if (tile != NULL) { //render value
@@ -52,8 +54,8 @@ SDL_Texture *create_tile_texture(sdl_game_t *sdl_game, tile_t *tile) {
         SDL_Surface *surf = TTF_RenderText_Blended(sdl_game->font, text, color);
         SDL_Texture *text_texture = SDL_CreateTextureFromSurface(sdl_game->renderer, surf);
 
-        int maxHeight = TILE_SIZE * 0.8;
-        int maxWidth = TILE_SIZE - (TILE_SIZE * 0.2);
+        int maxHeight = (int) (texture_size * 0.8f);
+        int maxWidth = (int) (texture_size - (texture_size * 0.2f));
 
         int originHeight;
         int originWidth;
@@ -63,7 +65,7 @@ SDL_Texture *create_tile_texture(sdl_game_t *sdl_game, tile_t *tile) {
         int height = min(maxHeight, (originHeight * maxWidth) / originWidth);
         int width = (height * originWidth) / originHeight;
 
-        SDL_Rect rect = {((TILE_SIZE - width) / 2), ((TILE_SIZE - height) / 2), width, height};
+        SDL_Rect rect = {(int) ((texture_size - width) / 2), (int) ((texture_size - height) / 2), width, height};
         SDL_RenderCopy(sdl_game->renderer, text_texture, NULL, &rect);
 
         SDL_DestroyTexture(text_texture);
@@ -136,8 +138,11 @@ direction_t key2dir(SDL_KeyCode code) {
     }
 }
 
-void game_sdl_render_tile(sdl_game_t *sdl_game, int x, int y, int index) {
-    SDL_Texture *texture = sdl_game->textures[index];
+void game_sdl_render_tile(sdl_game_t *sdl_game, int x, int y, tile_t *tile) {
+    x = SPACING + (x * TILE_SIZE) + (x * SPACING);
+    y = SPACING + (y * TILE_SIZE) + (y * SPACING);
+
+    SDL_Texture *texture = sdl_game->textures[tile != NULL ? tile->index : COLORS_COUNT];
     SDL_Rect rect;
     rect.x = x;
     rect.y = ((int) WINDOW_HEIGHT - y) - TILE_SIZE;
@@ -148,15 +153,13 @@ void game_sdl_render_tile(sdl_game_t *sdl_game, int x, int y, int index) {
 }
 
 void game_sdl_render_tiles(sdl_game_t *sdl_game) {
+    vec2i_t vec;
+
     for (int x = 0; x < C; ++x) {
         for (int y = 0; y < R; ++y) {
-            vec2i_t vec = vec2i_of(x, y);
-            tile_t *tile = game_get_tile(sdl_game->game, &vec);
-
-            int minX = SPACING + (x * TILE_SIZE) + (x * SPACING);
-            int minY = SPACING + (y * TILE_SIZE) + (y * SPACING);
-
-            game_sdl_render_tile(sdl_game, minX, minY, tile != NULL ? (int) tile->index : COLORS_COUNT);
+            vec.x = x;
+            vec.y = y;
+            game_sdl_render_tile(sdl_game, x, y, game_get_tile(sdl_game->game, &vec));
         }
     }
 }
@@ -177,7 +180,7 @@ void render_text(sdl_game_t *sdl_game, SDL_Color color, char *text, int x, int y
     SDL_FreeSurface(surf);
 }
 
-void game_sdl_render(sdl_game_t *sdl_game) {
+void game_sdl_render(sdl_game_t *sdl_game, SDL_bool tiles) {
     SDL_SetRenderDrawColorRGB(sdl_game->renderer, COLOR_BACKGROUND, 255);
     SDL_RenderClear(sdl_game->renderer);
 
@@ -199,19 +202,92 @@ void game_sdl_render(sdl_game_t *sdl_game) {
         render_text(sdl_game, (SDL_Color) {60, 232, 69}, "Vyhra", 300, 40, 50);
     }
 
-    game_sdl_render_tiles(sdl_game);
+    if (tiles) {
+        game_sdl_render_tiles(sdl_game);
+    }
+}
+
+void game_sdl_tile_merge_animation_handler(sdl_game_t *sdl_game, animation_t *animation, int progress) {
+    vec_tile_t *vec_tile = animation->data;
+
+    int x = vec_tile->vec.x;
+    int y = vec_tile->vec.y;
+
+    x = SPACING + (x * TILE_SIZE) + (x * SPACING);
+    y = SPACING + (y * TILE_SIZE) + (y * SPACING);
+
+    float increase = (1.0f + (0.2f * ((float) progress / 100.0f))) * TILE_SIZE;
+    int offset = (int) ((increase - TILE_SIZE) * 0.5f);
+
+    SDL_Texture *texture = sdl_game->textures[vec_tile->tile != NULL ? vec_tile->tile->index : COLORS_COUNT];
+    SDL_Rect rect;
+    rect.x = x - offset;
+    rect.y = ((int) WINDOW_HEIGHT - y) - TILE_SIZE - offset;
+    rect.w = (int) increase;
+    rect.h = (int) increase;
+
+    game_sdl_render(sdl_game, SDL_TRUE);
+    SDL_RenderCopy(sdl_game->renderer, texture, NULL, &rect);
+}
+
+void game_sdl_tile_move_animation_handler(sdl_game_t *sdl_game, animation_t *animation, int progress) {
+    moved_tile_t *data = animation->data;
+
+    vec2i_t *from = &data->from;
+    vec2i_t *to = &data->pos;
+
+    float percent = ((float) progress / 100);
+    float x = (float) from->x + ((float) (to->x - from->x) * percent);
+    float y = (float) from->y + ((float) (to->y - from->y) * percent);
+
+    x = SPACING + (x * TILE_SIZE) + (x * SPACING);
+    y = SPACING + (y * TILE_SIZE) + (y * SPACING);
+
+    SDL_Texture *texture = sdl_game->textures[data->tile != NULL ? data->tile->index : COLORS_COUNT];
+    SDL_Rect rect;
+    rect.x = (int) x;
+    rect.y = ((int) WINDOW_HEIGHT - (int) y) - TILE_SIZE;
+    rect.w = TILE_SIZE;
+    rect.h = TILE_SIZE;
+
+    SDL_RenderCopy(sdl_game->renderer, texture, NULL, &rect);
+}
+
+SDL_bool game_sdl_run_animations(sdl_game_t *sdl_game, animation_t *animations, Uint8 length) { //dummy handler
+    Uint32 ticks = SDL_GetTicks();
+
+    SDL_bool update = SDL_FALSE;
+    for (int i = 0; i < length; ++i) {
+        animation_t *animation = &animations[i];
+        Uint32 running = ticks - animation->start;
+        if (running >= animation->duration) {
+            if (animation->finishHandler != NULL) {
+                animation->finishHandler(sdl_game, animation);
+            }
+            continue;
+        }
+
+        int progress = (int) (animation->fromValue + ((double) (running) / animation->duration) *
+                                                     (animation->toValue - animation->fromValue));
+        animation->handler(sdl_game, animation, progress);
+        update = SDL_TRUE;
+    }
+
+    return update;
 }
 
 void game_sdl_start(sdl_game_t *sdl_game) {
     SDL_Event e;
-    int quit = 0;
+    SDL_bool quit = SDL_FALSE;
     Uint32 frame_start, frame_time, frame_delay = 1000;
+    round_result_t *result = NULL;
+    SDL_bool end = SDL_FALSE;
 
     while (!quit) {
         frame_start = SDL_GetTicks();
         while (SDL_PollEvent(&e)) {
             if (e.type == SDL_QUIT) {
-                quit = 1;
+                quit = SDL_TRUE;
                 break;
             }
 
@@ -219,24 +295,147 @@ void game_sdl_start(sdl_game_t *sdl_game) {
                 SDL_KeyCode key = e.key.keysym.sym;
 
                 if (isArrowKey(key)) {
-                    game_handle_move(sdl_game->game, key2dir(key));
+                    if (result == NULL) {
+                        result = malloc(sizeof(round_result_t));
+                    }
+                    game_handle_move(sdl_game->game, result, key2dir(key));
                     sdl_game->changed = 1;
                 } else if (key == SDLK_ESCAPE) {
-                    quit = 1;
+                    quit = SDL_TRUE;
                     break;
                 }
             }
         }
 
         if (sdl_game->changed) {
-            game_sdl_render(sdl_game);
+            game_sdl_render(sdl_game, SDL_FALSE);
 
-//            game_sdl_render_tile_value(sdl_game, 20, 20, 1024);
+            if (result != NULL && !end) {
+                moved_tile_t *unchanged_tiles[TILES_SIZE], empty_tiles[TILES_SIZE], *moved_tiles[TILES_SIZE];
+                Uint8 empty_length = 0, unchanged_length = 0, moved_length = 0;
 
-//            SDL_Rect rect = {10, 10, 200, 200};
-//
-//            SDL_SetRenderDrawColorRGB(sdl_game->renderer, COLOR_1024, 255);
-//            SDL_RenderFillRect(sdl_game->renderer, &rect);
+                for (int i = 0; i < TILES_SIZE; ++i) {
+                    moved_tile_t *tile = &result->tile_diffs[i];
+
+                    if (tile->combined != NULL) {
+
+                        if (i % result->axis_line_length != 0) {
+
+                        }
+
+                        tile->tile = tile->combined->tile;
+                        moved_tiles[moved_length++] = tile->combined;
+                    }
+
+                    if (tile->tile == NULL) {
+                        empty_tiles[empty_length++] = *tile;
+                    } else if (vec_equals(&tile->from, &tile->pos)) {
+                        unchanged_tiles[unchanged_length++] = tile;
+                    } else {
+                        moved_tiles[moved_length++] = tile;
+
+                        empty_tiles[empty_length++] = *tile;
+                        empty_tiles[empty_length - 1].tile = NULL;
+                    }
+                }
+
+                animation_t animations[moved_length];
+
+                if (moved_length > 0) {
+                    for (int i = 0; i < moved_length; ++i) {
+                        moved_tile_t *tile = moved_tiles[i];
+
+                        animation_t *anim = &animations[i];
+
+                        anim->data = tile;
+                        anim->handler = game_sdl_tile_move_animation_handler;
+                        anim->finishHandler = NULL;
+                        anim->duration = 100;
+                        anim->fromValue = 0;
+                        anim->toValue = 100;
+                    }
+                }
+
+                Uint32 ticks = SDL_GetTicks();
+                for (int i = 0; i < moved_length; ++i) {
+                    animations[i].start = ticks;
+                }
+
+                if (empty_length > 0) {
+                    for (int i = 0; i < empty_length; ++i) {
+                        moved_tile_t *tile = &empty_tiles[i];
+
+                        game_sdl_render_tile(sdl_game, tile->pos.x, tile->pos.y, tile->tile);
+                    }
+                }
+
+                while (game_sdl_run_animations(sdl_game, animations, moved_length)) {
+                    if (unchanged_length > 0) {
+                        for (int i = 0; i < unchanged_length; ++i) {
+                            moved_tile_t *tile = unchanged_tiles[i];
+
+                            game_sdl_render_tile(sdl_game, tile->pos.x, tile->pos.y, tile->tile);
+                        }
+                    }
+
+                    SDL_RenderPresent(sdl_game->renderer);
+                    game_sdl_render(sdl_game, SDL_FALSE);
+
+                    if (empty_length > 0) {
+                        for (int i = 0; i < empty_length; ++i) {
+                            moved_tile_t *tile = &empty_tiles[i];
+
+                            game_sdl_render_tile(sdl_game, tile->pos.x, tile->pos.y, tile->tile);
+                        }
+                    }
+                }
+
+                for (int i = 0; i < TILES_SIZE; ++i) {
+                    if (result->tile_diffs[i].combined != NULL) {
+                        free(result->tile_diffs[i].combined);
+                        result->tile_diffs[i].combined = NULL;
+                    }
+                }
+
+                if (result->merged_tiles_length > 0) {
+                    animation_t anims[result->merged_tiles_length];
+
+                    for (int i = 0; i < result->merged_tiles_length; ++i) {
+                        vec2i_t *pos = &result->merged_tiles[i];
+
+                        animation_t *anim = &anims[i];
+
+                        anim->data = malloc(sizeof(vec_tile_t));
+                        ((vec_tile_t *) anim->data)->tile = game_get_tile(sdl_game->game, pos);
+                        ((vec_tile_t *) anim->data)->vec = *pos;
+                        anim->handler = game_sdl_tile_merge_animation_handler;
+                        anim->finishHandler = NULL;
+                        anim->duration = 100;
+                        anim->fromValue = 0;
+                        anim->toValue = 100;
+                    }
+
+                    ticks = SDL_GetTicks();
+                    for (int i = 0; i < moved_length; ++i) {
+                        anims[i].start = ticks;
+                    }
+
+                    while (game_sdl_run_animations(sdl_game, anims, result->merged_tiles_length)) {
+                        SDL_RenderPresent(sdl_game->renderer);
+                    }
+
+                    for (int i = 0; i < result->merged_tiles_length; ++i) {
+                        free(anims[i].data);
+                        anims[i].data = NULL;
+                    }
+                }
+
+                if (result->state == STATE_WIN || result->state == STATE_BLOCKED) {
+                    end = SDL_TRUE;
+                }
+            }
+
+            game_sdl_render(sdl_game, SDL_TRUE);
 
             sdl_game->changed = 0;
         }
@@ -248,5 +447,9 @@ void game_sdl_start(sdl_game_t *sdl_game) {
 //        if (frame_delay > frame_time) {
 //            SDL_Delay(frame_delay - frame_time);
 //        }
+    }
+
+    if (result != NULL) {
+        free(result);
     }
 }
