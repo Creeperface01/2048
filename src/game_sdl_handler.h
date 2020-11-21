@@ -8,6 +8,7 @@
 typedef struct {
     SDL_Window *window;
     SDL_Renderer *renderer;
+    SDL_Texture *texture;
     TTF_Font *font;
     SDL_Texture **textures;
     int changed;

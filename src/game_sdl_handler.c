@@ -79,6 +79,7 @@ sdl_game_t *game_sdl_init(game_t *game) {
     SDL_SetMainReady();
     SDL_Init(SDL_INIT_VIDEO);
     TTF_Init();
+    SDL_SetHint(SDL_HINT_RENDER_SCALE_QUALITY, "1");
 
     sdl_game_t *sdl_game = malloc(sizeof(sdl_game_t));
 
@@ -91,8 +92,13 @@ sdl_game_t *game_sdl_init(game_t *game) {
     );
 
     sdl_game->game = game;
-    sdl_game->renderer = SDL_CreateRenderer(sdl_game->window, -1, SDL_RENDERER_ACCELERATED | SDL_RENDERER_PRESENTVSYNC |
-                                                                  SDL_RENDERER_TARGETTEXTURE);
+    sdl_game->renderer = SDL_CreateRenderer(sdl_game->window, -1,
+                                            SDL_RENDERER_ACCELERATED | SDL_RENDERER_TARGETTEXTURE);
+
+    sdl_game->texture = SDL_CreateTexture(sdl_game->renderer, SDL_GetWindowPixelFormat(sdl_game->window),
+                                          SDL_TEXTUREACCESS_TARGET,
+                                          WINDOW_WIDTH, WINDOW_HEIGHT);
+    SDL_SetRenderTarget(sdl_game->renderer, sdl_game->texture);
 
     sdl_game->font = TTF_OpenFont("assets/OpenSans-Bold.ttf", 500);
 
@@ -104,7 +110,7 @@ sdl_game_t *game_sdl_init(game_t *game) {
 
     sdl_game->textures[COLORS_COUNT] = create_tile_texture(sdl_game, NULL);
 
-    SDL_SetRenderTarget(sdl_game->renderer, NULL);
+    SDL_SetRenderTarget(sdl_game->renderer, sdl_game->texture);
     return sdl_game;
 }
 
@@ -112,10 +118,12 @@ void game_sdl_destroy(sdl_game_t *sdl_game) {
     TTF_CloseFont(sdl_game->font);
     SDL_DestroyWindow(sdl_game->window);
     SDL_DestroyRenderer(sdl_game->renderer);
+    SDL_DestroyTexture(sdl_game->texture);
     SDL_Quit();
 
     sdl_game->window = NULL;
     sdl_game->renderer = NULL;
+    sdl_game->texture = NULL;
     sdl_game->font = NULL;
     free(sdl_game);
 }
@@ -275,15 +283,21 @@ SDL_bool game_sdl_run_animations(sdl_game_t *sdl_game, animation_t *animations, 
     return update;
 }
 
+void game_sdl_render_present(sdl_game_t *sdl_game) {
+    SDL_SetRenderTarget(sdl_game->renderer, NULL);
+    SDL_RenderCopy(sdl_game->renderer, sdl_game->texture, NULL, NULL);
+    SDL_RenderPresent(sdl_game->renderer);
+    SDL_SetRenderTarget(sdl_game->renderer, sdl_game->texture);
+}
+
 void game_sdl_start(sdl_game_t *sdl_game) {
     SDL_Event e;
     SDL_bool quit = SDL_FALSE;
-    Uint32 frame_start, frame_time, frame_delay = 1000;
     round_result_t *result = NULL;
     SDL_bool end = SDL_FALSE;
 
+
     while (!quit) {
-        frame_start = SDL_GetTicks();
         while (SDL_PollEvent(&e)) {
             if (e.type == SDL_QUIT) {
                 quit = SDL_TRUE;
@@ -317,11 +331,6 @@ void game_sdl_start(sdl_game_t *sdl_game) {
                     moved_tile_t *tile = &result->tile_diffs[i];
 
                     if (tile->combined != NULL) {
-
-                        if (i % result->axis_line_length != 0) {
-
-                        }
-
                         tile->tile = tile->combined->tile;
                         moved_tiles[moved_length++] = tile->combined;
                     }
@@ -377,7 +386,7 @@ void game_sdl_start(sdl_game_t *sdl_game) {
                         }
                     }
 
-                    SDL_RenderPresent(sdl_game->renderer);
+                    game_sdl_render_present(sdl_game);
                     game_sdl_render(sdl_game, SDL_FALSE);
 
                     if (empty_length > 0) {
@@ -421,7 +430,7 @@ void game_sdl_start(sdl_game_t *sdl_game) {
 
                     game_sdl_render(sdl_game, SDL_TRUE);
                     while (game_sdl_run_animations(sdl_game, anims, result->merged_tiles_length)) {
-                        SDL_RenderPresent(sdl_game->renderer);
+                        game_sdl_render_present(sdl_game);
                         game_sdl_render(sdl_game, SDL_TRUE);
                     }
 
@@ -441,13 +450,7 @@ void game_sdl_start(sdl_game_t *sdl_game) {
             sdl_game->changed = 0;
         }
 
-        SDL_RenderPresent(sdl_game->renderer);
-
-//        frame_time = SDL_GetTicks() - frame_start;
-
-//        if (frame_delay > frame_time) {
-//            SDL_Delay(frame_delay - frame_time);
-//        }
+        game_sdl_render_present(sdl_game);
     }
 
     if (result != NULL) {

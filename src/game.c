@@ -245,8 +245,6 @@ void game_handle_move(game_t *game, round_result_t *result, direction_t directio
     int maxColumn = axis == AXIS_X ? R : C; // NOLINT(bugprone-branch-clone)
     int tilesLength = axis == AXIS_X ? C : R; // NOLINT(bugprone-branch-clone)
 
-    result->axis_line_length = tilesLength;
-
     int changed = 0;
 
     for (int i = 0; i < maxColumn; ++i) {

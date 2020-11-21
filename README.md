@@ -3,7 +3,7 @@ A copy of 2048 game using SDL2
 
 ## Linux
 
-Assuming developer versions of SDL2 and SDL2_ttf are installed:
+Assuming developer versions of SDL2 (>= 2.0.12) and SDL2_ttf (>= 2.0.15) are installed:
 
 ```
 mkdir build

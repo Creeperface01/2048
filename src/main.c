@@ -12,8 +12,8 @@ int leakTest() {
 }
 
 int main(int arc, char *argv[]) {
-//    int i = leakTest();
-//    printf("%d\n", i);
+    int i = leakTest();
+    printf("%d\n", i);
     game_t *game = game_create();
 
     sdl_game_t *sdl_game = game_sdl_init(game);

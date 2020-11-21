@@ -31,7 +31,6 @@ typedef struct moved_tile_t {
 typedef struct {
     vec2i_t merged_tiles[MAX_LINE_LENGTH]; // NOLINT(bugprone-branch-clone)
     int merged_tiles_length;
-    int axis_line_length;
     moved_tile_t tile_diffs[R * C]; // NOLINT(bugprone-branch-clone)
     vec2i_t new_tile;
     round_state_t state;
