@@ -3,9 +3,6 @@ project(2048 C)
 
 set(CMAKE_C_STANDARD 11)
 
-set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fno-omit-frame-pointer -fsanitize=address -fsanitize=leak")
-set(CMAKE_LINKER_FLAGS "${CMAKE_LINKER_FLAGS} -fno-omit-frame-pointer -fsanitize=address -fsanitize=leak")
-
 if (WIN32)
     set(SDL2MAIN_LIBRARY "${CMAKE_SOURCE_DIR}/libs/SDL2/x86_64-w64-mingw32/lib/libSDL2main.a")
 
@@ -21,7 +18,10 @@ if (WIN32)
             "${CMAKE_SOURCE_DIR}/libs/SDL2_ttf/x86_64-w64-mingw32/bin/libfreetype-6.dll"
             "${CMAKE_SOURCE_DIR}/libs/SDL2_ttf/x86_64-w64-mingw32/bin/zlib1.dll"
             DESTINATION ${CMAKE_BINARY_DIR})
-else()
+else ()
+    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fno-omit-frame-pointer -fsanitize=address -fsanitize=leak")
+    set(CMAKE_LINKER_FLAGS "${CMAKE_LINKER_FLAGS} -fno-omit-frame-pointer -fsanitize=address -fsanitize=leak")
+
     set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake")
     list(APPEND CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/libs/sanitizers/cmake")
 
