@@ -10,7 +10,8 @@ mkdir build
 cd build
 cmake ..
 make
-./2048
+cd ..
+./build/2048
 ```
 
 ## Windows x64
