@@ -27,12 +27,13 @@ SDL_Texture *create_tile_texture(sdl_game_t *sdl_game, tile_t *tile) {
     SDL_SetRenderDrawColorRGB(sdl_game->renderer, COLOR_BACKGROUND, 255);
     SDL_RenderClear(sdl_game->renderer);
 
+    int tmp;
     Uint8 *color_bytes;
 
     if (tile != NULL) {
         color_bytes = (Uint8 *) &tile->color;
     } else {
-        int tmp = COLOR_EMPTY;
+        tmp = COLOR_EMPTY;
         color_bytes = (Uint8 *) &tmp;
     }
 
@@ -424,7 +425,7 @@ void game_sdl_start(sdl_game_t *sdl_game) {
                     }
 
                     ticks = SDL_GetTicks();
-                    for (int i = 0; i < moved_length; ++i) {
+                    for (int i = 0; i < result->merged_tiles_length; ++i) {
                         anims[i].start = ticks;
                     }
 
