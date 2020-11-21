@@ -3,8 +3,8 @@ project(2048 C)
 
 set(CMAKE_C_STANDARD 11)
 
-set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -fno-omit-frame-pointer -fsanitize=address")
-set(CMAKE_LINKER_FLAGS_DEBUG "${CMAKE_LINKER_FLAGS_DEBUG} -fno-omit-frame-pointer -fsanitize=address")
+set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -fno-omit-frame-pointer -fsanitize=address -fsanitize=leak")
+set(CMAKE_LINKER_FLAGS_DEBUG "${CMAKE_LINKER_FLAGS_DEBUG} -fno-omit-frame-pointer -fsanitize=address -fsanitize=leak")
 
 set(CMAKE_EXE_LINKER_FLAGS_INIT "-fsanitize=address -fno-omit-frame-pointer")
 
@@ -39,7 +39,7 @@ include_directories(${SDL2_INCLUDE_DIR} ${SDL2_TTF_INCLUDE_DIR})
 file(GLOB SOURCES "src/*.c" "src/*.h")
 file(GLOB GFX_SOURCES "src/gfx/*.c" "src/gfx/*.h")
 add_executable(${PROJECT_NAME} ${SOURCES} ${GFX_SOURCES})
-target_link_libraries(${PROJECT_NAME}
+target_link_libraries(${PROJECT_NAME} -lm
         ${SDL2MAIN_LIBRARY}
         ${SDL2_LIBRARY}
         ${SDL2_TTF_LIBRARY})

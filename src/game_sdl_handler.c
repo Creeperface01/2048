@@ -49,7 +49,7 @@ SDL_Texture *create_tile_texture(sdl_game_t *sdl_game, tile_t *tile) {
         }
 
         char text[10];
-        itoa((int) tile->value, text, 10);
+        snprintf(text, 10, "%d", (int) tile->value);
 
         SDL_Surface *surf = TTF_RenderText_Blended(sdl_game->font, text, color);
         SDL_Texture *text_texture = SDL_CreateTextureFromSurface(sdl_game->renderer, surf);
