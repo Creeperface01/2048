@@ -226,7 +226,6 @@ void game_sdl_tile_merge_animation_handler(sdl_game_t *sdl_game, animation_t *an
     rect.w = (int) increase;
     rect.h = (int) increase;
 
-    game_sdl_render(sdl_game, SDL_TRUE);
     SDL_RenderCopy(sdl_game->renderer, texture, NULL, &rect);
 }
 
@@ -420,8 +419,10 @@ void game_sdl_start(sdl_game_t *sdl_game) {
                         anims[i].start = ticks;
                     }
 
+                    game_sdl_render(sdl_game, SDL_TRUE);
                     while (game_sdl_run_animations(sdl_game, anims, result->merged_tiles_length)) {
                         SDL_RenderPresent(sdl_game->renderer);
+                        game_sdl_render(sdl_game, SDL_TRUE);
                     }
 
                     for (int i = 0; i < result->merged_tiles_length; ++i) {
