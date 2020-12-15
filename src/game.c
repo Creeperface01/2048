@@ -29,22 +29,25 @@ int game_tile_index(game_t *game, vec2i_t *vec) {
     return (vec->y << game->bit_length) | vec->x; // NOLINT(hicpp-signed-bitwise)
 }
 
-game_t *game_create() {
+game_t *game_create(uint8_t width, uint8_t height) {
     game_t *game = malloc(sizeof(game_t));
+
+    config_t *cfg = &game->config;
+    config_init(&game->config, height, width);
 
     srand(time(NULL));
     init_tiles(game);
 
     game->score = 0;
-    game->bit_length = max(find_msb(R), find_msb(C));
+    game->bit_length = max(find_msb(cfg->rows), find_msb(cfg->cols));
 
     int highestIndex = (int) pow(2, (int) game->bit_length * 2);
     game->tiles = malloc(sizeof(tile_t *) * highestIndex);
     game->indices = malloc(sizeof(int) * highestIndex);
 
     int j = 0;
-    for (unsigned int x = 0; x < C; x++) {
-        for (unsigned int y = 0; y < R; ++y) {
+    for (unsigned int x = 0; x < cfg->cols; x++) {
+        for (unsigned int y = 0; y < cfg->rows; ++y) {
             game->indices[j++] = (y << game->bit_length) | x;
         }
     }
@@ -54,6 +57,7 @@ game_t *game_create() {
 }
 
 void game_reset(game_t *game) {
+    config_t *cfg = &game->config;
     game->score = 0;
     game->state = STATE_NONE;
 
@@ -63,10 +67,10 @@ void game_reset(game_t *game) {
     }
 
     vec2i_t vectors[2];
-    vectors[0] = vec2i_of(rand() % (int) C, rand() % (int) R);
+    vectors[0] = vec2i_of(rand() % (int) cfg->cols, rand() % (int) cfg->rows);
 
     do {
-        vectors[1] = vec2i_of(rand() % (int) C, rand() % (int) R);
+        vectors[1] = vec2i_of(rand() % (int) cfg->cols, rand() % (int) cfg->rows);
     } while (vec_equals(&vectors[0], &vectors[1]));
 
     for (int i = 0; i < 2; i++) {
@@ -82,7 +86,7 @@ void game_destroy(game_t *game) {
 }
 
 tile_t *game_get_tile(game_t *game, vec2i_t *position) {
-    if (!game_check_position(position)) {
+    if (!game_check_position(&game->config, position)) {
         return NULL;
     }
 
@@ -90,7 +94,7 @@ tile_t *game_get_tile(game_t *game, vec2i_t *position) {
 }
 
 int game_set_tile(game_t *game, vec2i_t *position, tile_t *tile) {
-    if (!game_check_position(position)) {
+    if (!game_check_position(&game->config, position)) {
         return 0;
     }
 
@@ -100,7 +104,7 @@ int game_set_tile(game_t *game, vec2i_t *position, tile_t *tile) {
 }
 
 tile_t *game_create_tile(game_t *game, vec2i_t *position, unsigned int value) {
-    if (!game_check_position(position)) {
+    if (!game_check_position(&game->config, position)) {
         return NULL;
     }
 
@@ -140,15 +144,17 @@ int find_mergeable(moved_tile_t *tiles, unsigned int length) {
 }
 
 int find_empty_tile(game_t *game, vec2i_t *v) {
-    unsigned int shuffled[TILES_SIZE];
+    uint16_t tiles_size = game->config.tiles_size;
 
-    for (int i = 0; i < TILES_SIZE; ++i) {
+    unsigned int shuffled[tiles_size];
+
+    for (int i = 0; i < tiles_size; ++i) {
         shuffled[i] = game->indices[i];
     }
 
-    shuffle(shuffled, TILES_SIZE, sizeof(unsigned int));
+    shuffle(shuffled, tiles_size, sizeof(unsigned int));
 
-    for (int i = 0; i < TILES_SIZE; ++i) {
+    for (int i = 0; i < tiles_size; ++i) {
         unsigned int index = shuffled[i];
         tile_t *t = game->tiles[index];
 
@@ -184,7 +190,9 @@ int game_shrink_tiles(moved_tile_t *tiles, int length) {
 }
 
 int game_check_blocked(game_t *game) {
-    for (int i = 0; i < TILES_SIZE; ++i) {
+    config_t *cfg = &game->config;
+
+    for (int i = 0; i < cfg->tiles_size; ++i) {
         tile_t *tile = game->tiles[game->indices[i]];
 
         if (tile == NULL) {
@@ -196,9 +204,9 @@ int game_check_blocked(game_t *game) {
     tile_t *last;
     tile_t *tile;
 
-    for (int x = 0; x < C; ++x) {
+    for (int x = 0; x < cfg->cols; ++x) {
         last = NULL;
-        for (int y = 0; y < R; ++y) {
+        for (int y = 0; y < cfg->rows; ++y) {
             vec = vec2i_of(x, y);
             tile = game_get_tile(game, &vec);
 
@@ -210,9 +218,9 @@ int game_check_blocked(game_t *game) {
         }
     }
 
-    for (int y = 0; y < R; ++y) {
+    for (int y = 0; y < cfg->rows; ++y) {
         last = NULL;
-        for (int x = 0; x < C; ++x) {
+        for (int x = 0; x < cfg->cols; ++x) {
             vec = vec2i_of(x, y);
             tile = game_get_tile(game, &vec);
 
@@ -227,23 +235,30 @@ int game_check_blocked(game_t *game) {
     return 1;
 }
 
-void game_handle_move(game_t *game, round_result_t *result, direction_t direction) {
-    if (result == NULL) {
-        round_result_t r;
-        result = &r;
-    }
+void game_destroy_result(round_result_t *result) {
+    free(result->merged_tiles);
+    free(result->tile_diffs);
+    free(result);
+}
+
+round_result_t *game_handle_move(game_t *game, direction_t direction) {
+    config_t *cfg = &game->config;
+
+    round_result_t *result = malloc(sizeof(round_result_t));
     result->merged_tiles_length = 0;
+    result->merged_tiles = malloc(sizeof(vec2i_t) * cfg->max_line_length);
+    result->tile_diffs = malloc(sizeof(moved_tile_t) * cfg->rows * cfg->cols);
     result->state = STATE_NONE;
 
     if (game->state != STATE_NONE) {
         result->state = game->state;
-        return;
+        return result;
     }
 
     vec2i_t offset = vec_get_direction(direction);
     axis_t axis = vec_axis(&offset);
-    int maxColumn = axis == AXIS_X ? R : C; // NOLINT(bugprone-branch-clone)
-    int tilesLength = axis == AXIS_X ? C : R; // NOLINT(bugprone-branch-clone)
+    int maxColumn = axis == AXIS_X ? cfg->rows : cfg->cols; // NOLINT(bugprone-branch-clone)
+    int tilesLength = axis == AXIS_X ? cfg->cols : cfg->rows; // NOLINT(bugprone-branch-clone)
 
     int changed = 0;
 
@@ -293,15 +308,19 @@ void game_handle_move(game_t *game, round_result_t *result, direction_t directio
     if (game_check_blocked(game)) {
         result->state = game->state = STATE_BLOCKED;
     }
+
+    return result;
 }
 
 void get_relative_tiles(game_t *game, moved_tile_t *tiles, int length, direction_t direction, int column) {
+    config_t *cfg = &game->config;
+
     vec2i_t offset = vec_get_direction(direction);
     axis_t axis = vec_axis(&offset);
     int axis_direction = vec_axis_direction(&offset);
 
-    int baseX = axis == AXIS_X ? (axis_direction > 0 ? 0 : (int) (C - 1)) : (0 + column);
-    int baseY = axis == AXIS_Y ? (axis_direction > 0 ? 0 : (int) (R - 1)) : (0 + column);
+    int baseX = axis == AXIS_X ? (axis_direction > 0 ? 0 : (int) (cfg->cols - 1)) : (0 + column);
+    int baseY = axis == AXIS_Y ? (axis_direction > 0 ? 0 : (int) (cfg->rows - 1)) : (0 + column);
 
     vec2i_t base = {baseX, baseY};
 
@@ -313,8 +332,8 @@ void get_relative_tiles(game_t *game, moved_tile_t *tiles, int length, direction
     }
 }
 
-int game_check_position(vec2i_t *pos) {
-    return pos->x >= 0 && pos->x < C && pos->y >= 0 && pos->y < R;
+int game_check_position(config_t *cfg, vec2i_t *pos) {
+    return pos->x >= 0 && pos->x < cfg->cols && pos->y >= 0 && pos->y < cfg->rows;
 }
 
 #pragma clang diagnostic pop

@@ -2,6 +2,7 @@
 #include "stdlib.h"
 #include "stdio.h"
 #include "gfx/SDL2_gfxPrimitives.h"
+#include "sdl_assets.h"
 
 void resize_texture_by_height(SDL_Rect *rect, SDL_Texture *texture, int max_height) {
     int originHeight;
@@ -83,12 +84,13 @@ sdl_game_t *game_sdl_init(game_t *game) {
     SDL_SetHint(SDL_HINT_RENDER_SCALE_QUALITY, "1");
 
     sdl_game_t *sdl_game = malloc(sizeof(sdl_game_t));
+    config_t *cfg = &game->config;
 
     sdl_game->changed = 1;
     sdl_game->window = SDL_CreateWindow(
             "2048",
             SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED,
-            WINDOW_WIDTH, WINDOW_HEIGHT,
+            cfg->window_width, cfg->window_height,
             SDL_WINDOW_SHOWN
     );
 
@@ -98,10 +100,10 @@ sdl_game_t *game_sdl_init(game_t *game) {
 
     sdl_game->texture = SDL_CreateTexture(sdl_game->renderer, SDL_GetWindowPixelFormat(sdl_game->window),
                                           SDL_TEXTUREACCESS_TARGET,
-                                          WINDOW_WIDTH, WINDOW_HEIGHT);
+                                          cfg->window_width, cfg->window_height);
     SDL_SetRenderTarget(sdl_game->renderer, sdl_game->texture);
 
-    sdl_game->font = TTF_OpenFont("assets/OpenSans-Bold.ttf", 500);
+    sdl_game->font = load_font(500);
 
     sdl_game->textures = malloc(sizeof(SDL_Texture *) * (COLORS_COUNT + 1));
 
@@ -154,7 +156,7 @@ void game_sdl_render_tile(sdl_game_t *sdl_game, int x, int y, tile_t *tile) {
     SDL_Texture *texture = sdl_game->textures[tile != NULL ? tile->index : COLORS_COUNT];
     SDL_Rect rect;
     rect.x = x;
-    rect.y = ((int) WINDOW_HEIGHT - y) - TILE_SIZE;
+    rect.y = ((int) sdl_game->game->config.window_height - y) - TILE_SIZE;
     rect.w = TILE_SIZE;
     rect.h = TILE_SIZE;
 
@@ -162,10 +164,11 @@ void game_sdl_render_tile(sdl_game_t *sdl_game, int x, int y, tile_t *tile) {
 }
 
 void game_sdl_render_tiles(sdl_game_t *sdl_game) {
+    config_t *cfg = &sdl_game->game->config;
     vec2i_t vec;
 
-    for (int x = 0; x < C; ++x) {
-        for (int y = 0; y < R; ++y) {
+    for (int x = 0; x < cfg->cols; ++x) {
+        for (int y = 0; y < cfg->rows; ++y) {
             vec.x = x;
             vec.y = y;
             game_sdl_render_tile(sdl_game, x, y, game_get_tile(sdl_game->game, &vec));
@@ -193,7 +196,7 @@ void game_sdl_render(sdl_game_t *sdl_game, SDL_bool tiles) {
     SDL_SetRenderDrawColorRGB(sdl_game->renderer, COLOR_BACKGROUND, 255);
     SDL_RenderClear(sdl_game->renderer);
 
-    SDL_Rect rect = {0, 0, WINDOW_WIDTH, STATUS_BAR_HEIGHT};
+    SDL_Rect rect = {0, 0, sdl_game->game->config.window_width, STATUS_BAR_HEIGHT};
     SDL_SetRenderDrawColor(sdl_game->renderer, 150, 150, 150, 255);
     SDL_RenderFillRect(sdl_game->renderer, &rect);
 
@@ -231,7 +234,7 @@ void game_sdl_tile_merge_animation_handler(sdl_game_t *sdl_game, animation_t *an
     SDL_Texture *texture = sdl_game->textures[vec_tile->tile != NULL ? vec_tile->tile->index : COLORS_COUNT];
     SDL_Rect rect;
     rect.x = x - offset;
-    rect.y = ((int) WINDOW_HEIGHT - y) - TILE_SIZE - offset;
+    rect.y = ((int) sdl_game->game->config.window_height - y) - TILE_SIZE - offset;
     rect.w = (int) increase;
     rect.h = (int) increase;
 
@@ -254,7 +257,7 @@ void game_sdl_tile_move_animation_handler(sdl_game_t *sdl_game, animation_t *ani
     SDL_Texture *texture = sdl_game->textures[data->tile != NULL ? data->tile->index : COLORS_COUNT];
     SDL_Rect rect;
     rect.x = (int) x;
-    rect.y = ((int) WINDOW_HEIGHT - (int) y) - TILE_SIZE;
+    rect.y = ((int) sdl_game->game->config.window_height - (int) y) - TILE_SIZE;
     rect.w = TILE_SIZE;
     rect.h = TILE_SIZE;
 
@@ -309,10 +312,11 @@ void game_sdl_start(sdl_game_t *sdl_game) {
                 SDL_KeyCode key = e.key.keysym.sym;
 
                 if (isArrowKey(key)) {
-                    if (result == NULL) {
-                        result = malloc(sizeof(round_result_t));
+                    if (result != NULL) {
+                        game_destroy_result(result);
                     }
-                    game_handle_move(sdl_game->game, result, key2dir(key));
+
+                    result = game_handle_move(sdl_game->game, key2dir(key));
                     sdl_game->changed = 1;
                 } else if (key == SDLK_ESCAPE) {
                     quit = SDL_TRUE;
@@ -325,10 +329,13 @@ void game_sdl_start(sdl_game_t *sdl_game) {
             game_sdl_render(sdl_game, SDL_FALSE);
 
             if (result != NULL && !end) {
-                moved_tile_t *unchanged_tiles[TILES_SIZE], empty_tiles[TILES_SIZE], *moved_tiles[TILES_SIZE];
+                config_t *cfg = &sdl_game->game->config;
+                uint16_t tiles_size = cfg->tiles_size;
+
+                moved_tile_t *unchanged_tiles[tiles_size], empty_tiles[tiles_size], *moved_tiles[tiles_size];
                 Uint8 empty_length = 0, unchanged_length = 0, moved_length = 0;
 
-                for (int i = 0; i < TILES_SIZE; ++i) {
+                for (int i = 0; i < tiles_size; ++i) {
                     moved_tile_t *tile = &result->tile_diffs[i];
 
                     if (tile->combined != NULL) {
@@ -399,7 +406,7 @@ void game_sdl_start(sdl_game_t *sdl_game) {
                     }
                 }
 
-                for (int i = 0; i < TILES_SIZE; ++i) {
+                for (int i = 0; i < tiles_size; ++i) {
                     if (result->tile_diffs[i].combined != NULL) {
                         free(result->tile_diffs[i].combined);
                         result->tile_diffs[i].combined = NULL;
@@ -455,6 +462,6 @@ void game_sdl_start(sdl_game_t *sdl_game) {
     }
 
     if (result != NULL) {
-        free(result);
+        game_destroy_result(result);
     }
 }

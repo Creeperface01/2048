@@ -19,6 +19,7 @@ typedef struct {
     unsigned int *indices;
     unsigned int bit_length;
     round_state_t state;
+    config_t config;
 } game_t;
 
 typedef struct moved_tile_t {
@@ -29,20 +30,22 @@ typedef struct moved_tile_t {
 } moved_tile_t;
 
 typedef struct {
-    vec2i_t merged_tiles[MAX_LINE_LENGTH]; // NOLINT(bugprone-branch-clone)
+    vec2i_t *merged_tiles;//[MAX_LINE_LENGTH]; // NOLINT(bugprone-branch-clone)
     int merged_tiles_length;
-    moved_tile_t tile_diffs[R * C]; // NOLINT(bugprone-branch-clone)
+    moved_tile_t *tile_diffs;//[R * C]; // NOLINT(bugprone-branch-clone)
     vec2i_t new_tile;
     round_state_t state;
 } round_result_t;
 
-game_t *game_create();
+game_t *game_create(uint8_t width, uint8_t height);
 
 void game_reset(game_t *game);
 
 void game_destroy(game_t *game);
 
-void game_handle_move(game_t *game, round_result_t *result, direction_t direction);
+void game_destroy_result(round_result_t *result);
+
+round_result_t *game_handle_move(game_t *game, direction_t direction);
 
 void get_relative_tiles(game_t *game, moved_tile_t *tiles, int length, direction_t direction, int column);
 
@@ -50,6 +53,6 @@ tile_t *game_create_tile(game_t *game, vec2i_t *position, unsigned int value);
 
 tile_t *game_get_tile(game_t *game, vec2i_t *position);
 
-int game_check_position(vec2i_t *pos);
+int game_check_position(config_t *cfg, vec2i_t *pos);
 
 #endif //PROJEKT1_GAME_H
