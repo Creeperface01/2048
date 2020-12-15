@@ -1,10 +1,10 @@
 #ifndef PROJEKT1_DIRECTION_UTILS_H
 #define PROJEKT1_DIRECTION_UTILS_H
 
-#include "stdlib.h"
-#include "math.h"
 #include "data.h"
 #include "config.h"
+#include <stdlib.h>
+#include <math.h>
 
 
 vec2i_t vec2i_of(int x, int y);

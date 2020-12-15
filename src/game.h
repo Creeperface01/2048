@@ -4,6 +4,7 @@
 #include "direction.h"
 #include "data.h"
 #include "config.h"
+#include <stdint.h>
 
 typedef enum {
     STATE_NONE,
@@ -13,11 +14,11 @@ typedef enum {
 } round_state_t;
 
 typedef struct {
-    unsigned int score;
+    uint32_t score;
     tile_t *tile_types;
     tile_t **tiles;
-    unsigned int *indices;
-    unsigned int bit_length;
+    uint32_t *indices;
+    uint32_t bit_length;
     round_state_t state;
     config_t config;
 } game_t;

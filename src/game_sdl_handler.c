@@ -1,8 +1,9 @@
 #include "game_sdl_handler.h"
-#include "stdlib.h"
-#include "stdio.h"
 #include "gfx/SDL2_gfxPrimitives.h"
 #include "sdl_assets.h"
+#include <stdlib.h>
+#include <stdio.h>
+#include <stdbool.h>
 
 void resize_texture_by_height(SDL_Rect *rect, SDL_Texture *texture, int max_height) {
     int originHeight;
@@ -192,7 +193,7 @@ void render_text(sdl_game_t *sdl_game, SDL_Color color, char *text, int x, int y
     SDL_FreeSurface(surf);
 }
 
-void game_sdl_render(sdl_game_t *sdl_game, SDL_bool tiles) {
+void game_sdl_render(sdl_game_t *sdl_game, bool tiles) {
     SDL_SetRenderDrawColorRGB(sdl_game->renderer, COLOR_BACKGROUND, 255);
     SDL_RenderClear(sdl_game->renderer);
 
@@ -264,10 +265,10 @@ void game_sdl_tile_move_animation_handler(sdl_game_t *sdl_game, animation_t *ani
     SDL_RenderCopy(sdl_game->renderer, texture, NULL, &rect);
 }
 
-SDL_bool game_sdl_run_animations(sdl_game_t *sdl_game, animation_t *animations, Uint8 length) { //dummy handler
+bool game_sdl_run_animations(sdl_game_t *sdl_game, animation_t *animations, Uint8 length) { //dummy handler
     Uint32 ticks = SDL_GetTicks();
 
-    SDL_bool update = SDL_FALSE;
+    bool update = false;
     for (int i = 0; i < length; ++i) {
         animation_t *animation = &animations[i];
         Uint32 running = ticks - animation->start;
@@ -281,7 +282,7 @@ SDL_bool game_sdl_run_animations(sdl_game_t *sdl_game, animation_t *animations, 
         int progress = (int) (animation->fromValue + ((double) (running) / animation->duration) *
                                                      (animation->toValue - animation->fromValue));
         animation->handler(sdl_game, animation, progress);
-        update = SDL_TRUE;
+        update = true;
     }
 
     return update;
@@ -296,15 +297,15 @@ void game_sdl_render_present(sdl_game_t *sdl_game) {
 
 void game_sdl_start(sdl_game_t *sdl_game) {
     SDL_Event e;
-    SDL_bool quit = SDL_FALSE;
+    bool quit = false;
     round_result_t *result = NULL;
-    SDL_bool end = SDL_FALSE;
+    bool end = false;
 
 
     while (!quit) {
         while (SDL_PollEvent(&e)) {
             if (e.type == SDL_QUIT) {
-                quit = SDL_TRUE;
+                quit = true;
                 break;
             }
 
@@ -319,14 +320,14 @@ void game_sdl_start(sdl_game_t *sdl_game) {
                     result = game_handle_move(sdl_game->game, key2dir(key));
                     sdl_game->changed = 1;
                 } else if (key == SDLK_ESCAPE) {
-                    quit = SDL_TRUE;
+                    quit = true;
                     break;
                 }
             }
         }
 
         if (sdl_game->changed) {
-            game_sdl_render(sdl_game, SDL_FALSE);
+            game_sdl_render(sdl_game, false);
 
             if (result != NULL && !end) {
                 config_t *cfg = &sdl_game->game->config;
@@ -395,7 +396,7 @@ void game_sdl_start(sdl_game_t *sdl_game) {
                     }
 
                     game_sdl_render_present(sdl_game);
-                    game_sdl_render(sdl_game, SDL_FALSE);
+                    game_sdl_render(sdl_game, false);
 
                     if (empty_length > 0) {
                         for (int i = 0; i < empty_length; ++i) {
@@ -436,10 +437,10 @@ void game_sdl_start(sdl_game_t *sdl_game) {
                         anims[i].start = ticks;
                     }
 
-                    game_sdl_render(sdl_game, SDL_TRUE);
+                    game_sdl_render(sdl_game, true);
                     while (game_sdl_run_animations(sdl_game, anims, result->merged_tiles_length)) {
                         game_sdl_render_present(sdl_game);
-                        game_sdl_render(sdl_game, SDL_TRUE);
+                        game_sdl_render(sdl_game, true);
                     }
 
                     for (int i = 0; i < result->merged_tiles_length; ++i) {
@@ -449,11 +450,11 @@ void game_sdl_start(sdl_game_t *sdl_game) {
                 }
 
                 if (result->state == STATE_WIN || result->state == STATE_BLOCKED) {
-                    end = SDL_TRUE;
+                    end = true;
                 }
             }
 
-            game_sdl_render(sdl_game, SDL_TRUE);
+            game_sdl_render(sdl_game, true);
 
             sdl_game->changed = 0;
         }

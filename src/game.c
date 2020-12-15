@@ -2,12 +2,12 @@
 #pragma ide diagnostic ignored "cert-msc50-cpp"
 #pragma ide diagnostic ignored "cert-msc51-cpp"
 
-#include <stdio.h>
 #include "game.h"
-#include "stdlib.h"
+#include <stdlib.h>
 #include <string.h>
-#include "math.h"
-#include "time.h"
+#include <math.h>
+#include <time.h>
+#include <stdbool.h>
 
 void init_tiles(game_t *game) {
     game->tile_types = malloc(sizeof(tile_t) * COLORS_COUNT);
@@ -46,8 +46,8 @@ game_t *game_create(uint8_t width, uint8_t height) {
     game->indices = malloc(sizeof(int) * highestIndex);
 
     int j = 0;
-    for (unsigned int x = 0; x < cfg->cols; x++) {
-        for (unsigned int y = 0; y < cfg->rows; ++y) {
+    for (uint8_t x = 0; x < cfg->cols; x++) {
+        for (uint8_t y = 0; y < cfg->rows; ++y) {
             game->indices[j++] = (y << game->bit_length) | x;
         }
     }
@@ -93,22 +93,22 @@ tile_t *game_get_tile(game_t *game, vec2i_t *position) {
     return game->tiles[game_tile_index(game, position)];
 }
 
-int game_set_tile(game_t *game, vec2i_t *position, tile_t *tile) {
+bool game_set_tile(game_t *game, vec2i_t *position, tile_t *tile) {
     if (!game_check_position(&game->config, position)) {
-        return 0;
+        return false;
     }
 
     game->tiles[game_tile_index(game, position)] = tile;
 
-    return 1;
+    return true;
 }
 
-tile_t *game_create_tile(game_t *game, vec2i_t *position, unsigned int value) {
+tile_t *game_create_tile(game_t *game, vec2i_t *position, uint32_t value) {
     if (!game_check_position(&game->config, position)) {
         return NULL;
     }
 
-    unsigned int i;
+    uint8_t i;
     for (i = 0; i < 11; i++) {
         if ((value & (1u << i)) != 0) {
             break;
@@ -126,7 +126,7 @@ tile_t *game_create_tile(game_t *game, vec2i_t *position, unsigned int value) {
     return tile;
 }
 
-int find_mergeable(moved_tile_t *tiles, unsigned int length) {
+int find_mergeable(moved_tile_t *tiles, uint32_t length) {
     moved_tile_t *last = NULL;
 
     for (int i = (int) length - 1; i >= 0; i--) {
@@ -143,34 +143,34 @@ int find_mergeable(moved_tile_t *tiles, unsigned int length) {
     return -1;
 }
 
-int find_empty_tile(game_t *game, vec2i_t *v) {
+bool find_empty_tile(game_t *game, vec2i_t *v) {
     uint16_t tiles_size = game->config.tiles_size;
 
-    unsigned int shuffled[tiles_size];
+    uint32_t shuffled[tiles_size];
 
     for (int i = 0; i < tiles_size; ++i) {
         shuffled[i] = game->indices[i];
     }
 
-    shuffle(shuffled, tiles_size, sizeof(unsigned int));
+    shuffle(shuffled, tiles_size, sizeof(uint32_t));
 
     for (int i = 0; i < tiles_size; ++i) {
-        unsigned int index = shuffled[i];
+        uint32_t index = shuffled[i];
         tile_t *t = game->tiles[index];
 
         if (t == NULL) {
-            *v = vec2i_of((int) (index & ((unsigned int) pow(2, game->bit_length) - 1)),
+            *v = vec2i_of((int) (index & ((uint32_t) pow(2, game->bit_length) - 1)),
                           (int) (index >> game->bit_length));
-            return 1;
+            return true;
         }
     }
 
-    return 0;
+    return false;
 }
 
-int game_shrink_tiles(moved_tile_t *tiles, int length) {
+bool game_shrink_tiles(moved_tile_t *tiles, int length) {
     int current_offset = 0;
-    int changed = 0;
+    bool changed = false;
     for (int j = length - 1; j >= 0; j--) {
         if (tiles[j].tile == NULL) {
             current_offset++;
@@ -182,21 +182,21 @@ int game_shrink_tiles(moved_tile_t *tiles, int length) {
             vec_cpy(&tiles[j].from, &tiles[j + current_offset].from);
 
             tiles[j].tile = NULL;
-            changed = 1;
+            changed = true;
         }
     }
 
     return changed;
 }
 
-int game_check_blocked(game_t *game) {
+bool game_check_blocked(game_t *game) {
     config_t *cfg = &game->config;
 
     for (int i = 0; i < cfg->tiles_size; ++i) {
         tile_t *tile = game->tiles[game->indices[i]];
 
         if (tile == NULL) {
-            return 0;
+            return false;
         }
     }
 
@@ -211,7 +211,7 @@ int game_check_blocked(game_t *game) {
             tile = game_get_tile(game, &vec);
 
             if (last != NULL && last->value == tile->value) {
-                return 0;
+                return false;
             }
 
             last = tile;
@@ -225,14 +225,14 @@ int game_check_blocked(game_t *game) {
             tile = game_get_tile(game, &vec);
 
             if (last != NULL && last->value == tile->value) {
-                return 0;
+                return false;
             }
 
             last = tile;
         }
     }
 
-    return 1;
+    return true;
 }
 
 void game_destroy_result(round_result_t *result) {
@@ -260,7 +260,7 @@ round_result_t *game_handle_move(game_t *game, direction_t direction) {
     int maxColumn = axis == AXIS_X ? cfg->rows : cfg->cols; // NOLINT(bugprone-branch-clone)
     int tilesLength = axis == AXIS_X ? cfg->cols : cfg->rows; // NOLINT(bugprone-branch-clone)
 
-    int changed = 0;
+    bool changed = false;
 
     for (int i = 0; i < maxColumn; ++i) {
         moved_tile_t tiles[tilesLength];
@@ -274,7 +274,7 @@ round_result_t *game_handle_move(game_t *game, direction_t direction) {
         if (mergeableIndex >= 0) {
             result->state = STATE_MERGE;
             tiles[mergeableIndex].tile = &game->tile_types[tiles[mergeableIndex].tile->index + 1];
-            unsigned int tileValue = tiles[mergeableIndex].tile->value;
+            uint32_t tileValue = tiles[mergeableIndex].tile->value;
             game->score += tileValue;
             if (tileValue == 2048) {
                 result->state = game->state = STATE_WIN;
@@ -286,7 +286,7 @@ round_result_t *game_handle_move(game_t *game, direction_t direction) {
 
             tiles[mergeableIndex - 1].tile = NULL;
             result->merged_tiles[result->merged_tiles_length++] = tiles[mergeableIndex].pos;
-            changed = 1;
+            changed = true;
         }
 
         changed = game_shrink_tiles(tiles, tilesLength) || changed;

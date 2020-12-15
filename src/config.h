@@ -1,22 +1,13 @@
 #ifndef PROJEKT1_CONFIG_H
 #define PROJEKT1_CONFIG_H
 
-#include "stdint.h"
-#include "string.h"
-
-//#define R 8u
-//#define C 8u
-
-//#define TILES_SIZE (R * C)
-//#define MAX_LINE_LENGTH (R > C ? R : C)
+#include <stdint.h>
+#include <string.h>
 
 #define SPACING 15u
 #define TILE_SIZE 100
 
 #define STATUS_BAR_HEIGHT 100
-
-//#define WINDOW_HEIGHT (R * (TILE_SIZE + SPACING) + SPACING + STATUS_BAR_HEIGHT)
-//#define WINDOW_WIDTH (C * (TILE_SIZE + SPACING) + SPACING)
 
 #define MERGE_ANIMATION_SCALE 1.5f
 
