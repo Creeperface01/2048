@@ -4,9 +4,9 @@ A copy of 2048 game using SDL2
 
 ## Program CLI arguments
 
-- w - column count (width)
-- h - row count (height)
-- r - resets top scores
+- c - column count (width)
+- r - row count (height)
+- s - resets top scores
 
 ## Linux
 
@@ -18,7 +18,7 @@ cd build
 cmake ..
 make
 cd ..
-./build/2048 -w 8 -h 8
+./build/2048 -r 4 -c 4
 ```
 
 ## Windows x64

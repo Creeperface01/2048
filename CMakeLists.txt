@@ -2,7 +2,14 @@ cmake_minimum_required(VERSION 3.17)
 project(2048 C)
 
 set(CMAKE_C_STANDARD 11)
-set(BASE64_LIBRARY "${CMAKE_SOURCE_DIR}/libs/base64-bin/libBase64.a")
+
+if (WIN32)
+    set(LIB_DIR "${CMAKE_SOURCE_DIR}/libs-win")
+else ()
+    set(LIB_DIR "${CMAKE_SOURCE_DIR}/libs-unix")
+endif ()
+
+set(BASE64_LIBRARY "${LIB_DIR}/base64-bin/libBase64.a")
 
 if (WIN32)
     set(SDL2MAIN_LIBRARY "${CMAKE_SOURCE_DIR}/libs/SDL2/x86_64-w64-mingw32/lib/libSDL2main.a")
@@ -20,10 +27,6 @@ if (WIN32)
             "${CMAKE_SOURCE_DIR}/libs/SDL2_ttf/x86_64-w64-mingw32/bin/zlib1.dll"
             DESTINATION ${CMAKE_BINARY_DIR})
 else ()
-    #    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fno-omit-frame-pointer -fsanitize=address -fsanitize=leak")
-    #    set(CMAKE_LINKER_FLAGS "${CMAKE_LINKER_FLAGS} -fno-omit-frame-pointer -fsanitize=address -fsanitize=leak")
-
-    #    list(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/cmake/)
     set(SDL2MAIN_LIBRARY "")
 
     list(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/cmake)
@@ -36,8 +39,8 @@ include(ExternalProject)
 ExternalProject_Add(base64_external
         GIT_REPOSITORY https://github.com/Creeperface01/Base64.git
         GIT_TAG master
-        SOURCE_DIR "${CMAKE_SOURCE_DIR}/libs/base64"
-        BINARY_DIR "${CMAKE_SOURCE_DIR}/libs/base64-bin"
+        SOURCE_DIR "${LIB_DIR}/base64"
+        BINARY_DIR "${LIB_DIR}/base64-bin"
         UPDATE_COMMAND ""
         INSTALL_COMMAND ""
         )
