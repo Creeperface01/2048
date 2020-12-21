@@ -47,8 +47,8 @@ create_window(window_type type, sdl_data_t *data, const char *title, int x, int 
 void destroy_window(SDL_Window *window) {
     window_handle_t *handle = get_window_handle(window);
 
-    SDL_DestroyWindow(window);
     SDL_DestroyRenderer(handle->renderer);
+    SDL_DestroyWindow(window);
 
     handle->renderer = NULL;
     handle->window = NULL;
