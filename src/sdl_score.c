@@ -2,12 +2,8 @@
 #include <stdlib.h>
 #include <stdio.h>
 
-//void render(sdl_data_t *data) {
-//
-//}
-
 uint16_t load_scores(uint16_t **data) {
-    FILE *f = fopen("scores.txt", "rb");
+    FILE *f = fopen("scores.bin", "rb");
 
     if (f == NULL) {
         return 0;
@@ -29,7 +25,7 @@ void save_scores(uint16_t *data, uint16_t length) {
         return;
     }
 
-    FILE *f = fopen("scores.txt", "wb");
+    FILE *f = fopen("scores.bin", "wb");
 
     fwrite(&length, sizeof(uint16_t), 1, f);
     fwrite(data, sizeof(uint16_t), length, f);
