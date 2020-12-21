@@ -4,7 +4,15 @@
 #include "stdlib.h"
 #include "stdio.h"
 #include <string.h>
-#include "../libs/base64/base64.h"
+
+#if defined ( WIN32 )
+
+#include "../libs-win/base64/base64.h"
+
+#else
+#include "../libs-unix/base64/base64.h"
+#endif
+
 #include "SDL.h"
 #include "SDL_ttf.h"
 
