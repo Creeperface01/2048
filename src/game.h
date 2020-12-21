@@ -17,8 +17,6 @@ typedef struct {
     uint32_t score;
     tile_t *tile_types;
     tile_t **tiles;
-    uint32_t *indices;
-    uint32_t bit_length;
     round_state_t state;
     config_t config;
 } game_t;

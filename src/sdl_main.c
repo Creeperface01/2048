@@ -118,7 +118,6 @@ void sdl_main_reset_cursor(sdl_data_t *data) {
 }
 
 sdl_data_t *sdl_main_init(uint16_t width, uint16_t height) {
-    SDL_SetMainReady();
     SDL_Init(SDL_INIT_VIDEO);
     TTF_Init();
     SDL_SetHint(SDL_HINT_RENDER_SCALE_QUALITY, "1");

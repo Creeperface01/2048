@@ -5,7 +5,6 @@
 #include "game.h"
 #include <stdlib.h>
 #include <string.h>
-#include <math.h>
 #include <time.h>
 #include <stdbool.h>
 
@@ -25,8 +24,14 @@ void init_tiles(game_t *game) {
     game->tile_types[10] = (tile_t) {10, 2048, COLOR_2048};
 }
 
-int game_tile_index(game_t *game, vec2i_t *vec) {
-    return (vec->y << game->bit_length) | vec->x; // NOLINT(hicpp-signed-bitwise)
+uint16_t game_tile_index(game_t *game, vec2i_t *vec) {
+    return vec->y * game->config.cols + vec->x;
+}
+
+void game_vec_from_index(game_t *game, uint16_t index, vec2i_t *vec) {
+    config_t *cfg = &game->config;
+    vec->x = index % cfg->cols;
+    vec->y = index / cfg->cols;
 }
 
 game_t *game_create(uint8_t width, uint8_t height) {
@@ -39,18 +44,7 @@ game_t *game_create(uint8_t width, uint8_t height) {
     init_tiles(game);
 
     game->score = 0;
-    game->bit_length = max(find_msb(cfg->rows), find_msb(cfg->cols));
-
-    int highestIndex = (int) pow(2, (int) game->bit_length * 2);
-    game->tiles = malloc(sizeof(tile_t *) * highestIndex);
-    game->indices = malloc(sizeof(int) * highestIndex);
-
-    int j = 0;
-    for (uint8_t x = 0; x < cfg->cols; x++) {
-        for (uint8_t y = 0; y < cfg->rows; ++y) {
-            game->indices[j++] = (y << game->bit_length) | x;
-        }
-    }
+    game->tiles = malloc(sizeof(tile_t *) * cfg->tiles_size);
 
     game_reset(game);
     return game;
@@ -61,8 +55,7 @@ void game_reset(game_t *game) {
     game->score = 0;
     game->state = STATE_NONE;
 
-    int highestIndex = (int) pow(2, (int) game->bit_length * 2);
-    for (int i = 0; i < highestIndex; i++) {
+    for (int i = 0; i < cfg->tiles_size; i++) {
         game->tiles[i] = NULL;
     }
 
@@ -80,7 +73,6 @@ void game_reset(game_t *game) {
 
 void game_destroy(game_t *game) {
     free(game->tiles);
-    free(game->indices);
     free(game->tile_types);
     free(game);
 }
@@ -149,7 +141,7 @@ bool find_empty_tile(game_t *game, vec2i_t *v) {
     uint32_t shuffled[tiles_size];
 
     for (int i = 0; i < tiles_size; ++i) {
-        shuffled[i] = game->indices[i];
+        shuffled[i] = i;
     }
 
     shuffle(shuffled, tiles_size, sizeof(uint32_t));
@@ -159,8 +151,7 @@ bool find_empty_tile(game_t *game, vec2i_t *v) {
         tile_t *t = game->tiles[index];
 
         if (t == NULL) {
-            *v = vec2i_of((int) (index & ((uint32_t) pow(2, game->bit_length) - 1)),
-                          (int) (index >> game->bit_length));
+            game_vec_from_index(game, index, v);
             return true;
         }
     }
@@ -193,7 +184,7 @@ bool game_check_blocked(game_t *game) {
     config_t *cfg = &game->config;
 
     for (int i = 0; i < cfg->tiles_size; ++i) {
-        tile_t *tile = game->tiles[game->indices[i]];
+        tile_t *tile = game->tiles[i];
 
         if (tile == NULL) {
             return false;
