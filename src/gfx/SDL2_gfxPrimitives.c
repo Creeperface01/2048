@@ -499,7 +499,7 @@ roundedRectangleRGBA(SDL_Renderer *renderer, Sint16 x1, Sint16 y1, Sint16 x2, Si
 */
 int roundedBoxColor(SDL_Renderer *renderer, Sint16 x1, Sint16 y1, Sint16 x2, Sint16 y2, Sint16 rad, Uint32 color) {
     Uint8 *c = (Uint8 *) &color;
-    return roundedBoxRGBA(renderer, x1, y1, x2, y2, rad, c[0], c[1], c[2], c[3]);
+    return roundedBoxRGBA(renderer, x1, y1, x2, y2, rad, c[3], c[2], c[1], c[0]);
 }
 
 /*!

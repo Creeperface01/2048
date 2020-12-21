@@ -88,3 +88,9 @@ void shuffle(void *data, int length, int element_size) {
         memcpy(data + i * element_size, tmp, element_size);
     }
 }
+
+void array_fill(void **src, void *value, uint32_t length) {
+    for (int i = 0; i < length; ++i) {
+        src[i] = value;
+    }
+}

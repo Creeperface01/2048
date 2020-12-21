@@ -2,17 +2,17 @@
 #define PROJEKT1_GAME_SDL_HANDLER_H
 
 #include "game.h"
-#include "utils.h"
+#include "sdl_utils.h"
 #include "SDL_ttf.h"
 
 typedef struct {
-    SDL_Window *window;
-    SDL_Renderer *renderer;
+    window_handle_t *handle;
     SDL_Texture *texture;
-    TTF_Font *font;
     SDL_Texture **textures;
-    int changed;
+    bool changed;
+    round_result_t *result;
     game_t *game;
+    bool end;
 } sdl_game_t;
 
 typedef struct animation_t {
@@ -28,11 +28,11 @@ typedef struct animation_t {
     Uint32 duration; //ms
 } animation_t;
 
-sdl_game_t *game_sdl_init(game_t *game);
+window_handle_t *game_sdl_init(sdl_data_t *data, game_t *game);
 
-void game_sdl_destroy(sdl_game_t *sdl_game);
+void game_sdl_destroy(window_handle_t *handle);
 
-void game_sdl_start(sdl_game_t *sdl_game);
+//void game_sdl_start(sdl_game_t *sdl_game);
 
 void game_sdl_render_tiles(sdl_game_t *sdl_game);
 

@@ -3,7 +3,7 @@
 #define SDL_MAIN_HANDLED
 
 #include "game.h"
-#include "game_sdl_handler.h"
+#include "sdl_game.h"
 #include "string.h"
 #include "stdbool.h"
 #include <errno.h>
@@ -126,12 +126,6 @@ int main(int arc, char *argv[]) {
         printf("Plane size must be between 2 and 100\n");
     }
 
-    game_t *game = game_create(w, h);
-
-    sdl_game_t *sdl_game = game_sdl_init(game);
-    game_sdl_start(sdl_game);
-
-    game_sdl_destroy(sdl_game);
-    game_destroy(game);
+    sdl_main_init(w, h);
     return 0;
 }

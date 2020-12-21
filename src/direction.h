@@ -39,4 +39,6 @@ int bit2byte(int bit_size);
 
 void shuffle(void *data, int length, int element_size);
 
+void array_fill(void **src, void *value, uint32_t length);
+
 #endif //PROJEKT1_DIRECTION_UTILS_H
