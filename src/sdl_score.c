@@ -69,17 +69,20 @@ window_handle_t *sdl_score_create_window(sdl_data_t *data) {
     uint16_t *scores;
     uint16_t length = load_scores(&scores);
 
-    uint16_t y = 10;
-    for (int i = 0; i < length; ++i) {
-        char str[32];
-        sprintf(str, "%d. %u", i, scores[length - (i + 1)]);
+    if (length > 0) {
+        uint16_t y = 10;
+        for (int i = 0; i < length; ++i) {
+            char str[32];
+            sprintf(str, "%d. %u", i, scores[length - (i + 1)]);
 
-        render_text(handle, (SDL_Color) {0, 0, 0, 255}, str, 10, y, 20, false);
+            render_text(handle, (SDL_Color) {0, 0, 0, 255}, str, 10, y, 20, false);
 
-        y += 30;
+            y += 30;
+        }
+
+        free(scores);
     }
 
-    free(scores);
     SDL_RenderPresent(handle->renderer);
     return handle;
 }
