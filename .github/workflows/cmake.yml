@@ -19,6 +19,7 @@ jobs:
     
     - name: Install SDL2
       run: |
+        echo "deb http://cz.archive.ubuntu.com/ubuntu hirsute main universe" | sudo tee -a /etc/apt/sources.list
         sudo apt install  libsdl2-dev
         sudo apt install  libsdl2-ttf-dev
 
