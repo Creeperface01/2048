@@ -1,11 +1,10 @@
-#include <stdio.h>
-
 #define SDL_MAIN_HANDLED
 
 #include "game.h"
 #include "sdl_game.h"
 #include "string.h"
 #include "stdbool.h"
+#include <stdio.h>
 #include <errno.h>
 
 typedef struct {
@@ -109,6 +108,11 @@ int main(int arc, char *argv[]) {
 
     arg_t *width = get_arg(args, args_length, "C");
     arg_t *height = get_arg(args, args_length, "R");
+    bool reset = get_arg_bool(args, args_length, "s");
+
+    if (reset) {
+        remove("scores.bin");
+    }
 
     if (width == NULL || height == NULL) {
         printf("Arguments R and C are required\n");

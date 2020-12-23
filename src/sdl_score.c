@@ -71,7 +71,7 @@ window_handle_t *sdl_score_create_window(sdl_data_t *data) {
             char str[32];
             sprintf(str, "%d. %u", i, scores[length - (i + 1)]);
 
-            render_text(handle, (SDL_Color) {0, 0, 0, 255}, str, 10, y, 20, false);
+            render_text(handle, COLOR_BLACK, str, 10, y, 20, false);
 
             y += 30;
         }

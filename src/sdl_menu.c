@@ -128,9 +128,9 @@ void render(window_handle_t *handle) {
         );
 
         if (menu->selected == i) {
-            render_text(handle, (SDL_Color) {255, 255, 255, 255}, text[i], MENU_WIDTH / 2, y0 + 10, 30, true);
+            render_text(handle, COLOR_WHITE, text[i], MENU_WIDTH / 2, y0 + 10, 30, true);
         } else {
-            render_text(handle, (SDL_Color) {0, 0, 0, 255}, text[i], MENU_WIDTH / 2, y0 + 10, 30, true);
+            render_text(handle, COLOR_BLACK, text[i], MENU_WIDTH / 2, y0 + 10, 30, true);
         }
     }
 

@@ -9,6 +9,9 @@
 
 #define WINDOW_HANDLE_DATA_KEY "window_handle"
 
+#define COLOR_BLACK ((SDL_Color) {0, 0, 0, 0xff})
+#define COLOR_WHITE ((SDL_Color) {0xff, 0xff, 0xff, 0xff})
+
 typedef enum {
     WINDOW_MAIN,
     WINDOW_GAME,

@@ -12,6 +12,5 @@ TTF_Font *load_font(int size) {
     SDL_RWops *rw = SDL_RWFromMem(mem, length);
 
     TTF_Font *font = TTF_OpenFontRW(rw, 1, size);
-//    free(mem);
     return font;
 }
