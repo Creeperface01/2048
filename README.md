@@ -31,10 +31,16 @@ cd build
 cmake .. -G "Visual Studio 14 2015 Win64"
 ```
 
-After this a ".sln" will be generated that can be opened with Visual Studio 2015.
-Right click on 2048 in project explorer and select as startup project.
-You can now run the demo from Visual Studio.
+After this a ".sln" will be generated that can be opened with Visual Studio 2015. Right click on 2048 in project
+explorer and select as startup project. You can now run the demo from Visual Studio.
 
 ## Mac OS
 
-Not tested
+Install SDL2 library
+
+```
+brew install SDL2
+brew install SDL2_ttf
+```
+
+To compile follow general linux instructions
